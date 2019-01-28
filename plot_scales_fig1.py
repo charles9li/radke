@@ -24,7 +24,7 @@ points = []
 # Extract data from csv and plot
 data_dict = {}
 for salt in salt_list:
-	with open('scales_fig1_data_'+salt+'.csv') as csvfile:
+	with open('data/scales_fig1_data_'+salt+'.csv') as csvfile:
 		datafile = csv.reader(csvfile, delimiter=',', quotechar='|')
 		conc_data = []
 		zeta_data = []
