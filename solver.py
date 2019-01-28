@@ -49,7 +49,7 @@ class Solution_1plate:
 			psi_beta = psi_d - sigma_d/self.C_2
 			S = L - np.sum(SM_list)
 
-			# Create adsoprtion equations
+			# Create adsorption equations
 			if self.pH_effect:
 				sigma_0 = -e*(L-SM_list[-1])
 				psi_0 = psi_beta + sigma_0/self.C_1
