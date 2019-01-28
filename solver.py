@@ -1,10 +1,10 @@
 import numpy as np
 import warnings
-import matplotlib.pyplot as plt
 from constants import *
 from scipy.constants import *
 from scipy.optimize import root, fsolve, minimize
 from scipy.integrate import odeint, simps, solve_bvp
+
 
 class Solution_1plate:
 
