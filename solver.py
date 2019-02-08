@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 from constants import *
 from scipy.constants import *
-from scipy.optimize import root, fsolve, minimize
+from scipy.optimize import root, minimize
 from scipy.integrate import odeint, simps, solve_bvp
 
 
@@ -67,7 +67,7 @@ class Solution_1plate:
 			else:
 				sigma_objective = (sigma_0 + sigma_d + e*np.sum(z_list[v_list]*SM_list))/sigma_0
 
-			# Create soution attributes or return equations
+			# Create solution attributes or return equations
 			if get_values:
 				self.SM_list = SM_list
 				self.psi_0 = psi_0
@@ -196,7 +196,7 @@ class Solution_1plate:
 		# Converts each element in all of the number density profiles to float type
 		self.rho_list = [np.array([float(r) for r in rho]) for rho in self.rho_list]
 
-		# Inidcates that the solver_PB method has been successfully run
+		# Indicates that the solver_PB method has been successfully run
 		self.solver_PB_complete = True
 
 	# Compute surface density of each ion bound in the diffuse layer
@@ -212,7 +212,7 @@ class Solution_1plate:
 		# Computes surface density of each ion bound in the diffuse layer
 		self.bound_diffuse_list = [simps(self.rho_list[i]-rho_bulk_list[i], self.x) for i in range(len(self.rho_list))]
 
-		# Inidcates that the bound_diffuse method has been successfully run
+		# Indicates that the bound_diffuse method has been successfully run
 		self.bound_diffuse_complete = True
 
 
