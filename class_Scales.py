@@ -22,16 +22,15 @@ class Solution_Scales:
 
         def equations(X0, c, KM, get_values=False):
 
-            psi_0, sigma_0 = X0
+            psi_d, SM, SH = X0
 
             # Equations
-            psi_beta = psi_0 - sigma_0/self.C1
-            SH = self.Ns + sigma_0/e
-            SM = KM*SH*c/self.cH*np.exp(e*(psi_0-psi_beta)/(k*self.T))
-            S = self.Ns - (SM + SH)
+            S = self.Ns - SM - SH
+            sigma_0 = -e*(SM + S)
             sigma_beta = e*SM
             sigma_d = e*S
-            psi_d = psi_beta + sigma_d/self.C2
+            psi_beta = psi_d - sigma_d/self.C2
+            psi_0 = psi_beta + sigma_0/self.C1
 
             # Return objective or create solution attributes
             if get_values:
@@ -45,17 +44,18 @@ class Solution_Scales:
                 self.psi_beta = psi_beta
                 self.psi_d = psi_d
             else:
-                Ka_objective = (self.Ka - S*self.cH/SH*np.exp(-e*psi_0/(k*self.T)))/self.Ka
                 sigma_objective = (sigma_0 + sigma_beta + sigma_d)/sigma_0
-                return np.append(Ka_objective, sigma_objective)
+                KM_objective = self.KM - SM*self.cH/(SH*self.c)*np.exp(e*(psi_beta-psi_0)/(k*self.T))
+                Ka_objective = self.Ka - S*self.cH/SH*np.exp(-e*psi_0/(k*self.T))
+                return np.array([sigma_objective, KM_objective, Ka_objective])
 
         # Set overflow to trigger warning
         np.seterr(over='warn')
         warnings.filterwarnings('error')
 
         # Helper function to create new guesses
-        def guess_create(eqns, guess, c, KM):
-            root_func = lambda X0: eqns(X0, c, KM)
+        def guess_create(equations, guess, c, KM):
+            root_func = lambda X0: equations(X0, c, KM)
             solution = root(root_func, guess, method='lm', tol=1e-10)
             return solution.x
 
@@ -64,10 +64,11 @@ class Solution_Scales:
             return 10**np.mean([np.log10(K1), np.log10(K2)])
 
         # Initialize guess and starting c and KM values
-        X0 = [0, -e*self.Ns*0.8]
+        X0 = np.array([-0.01, 0.2*self.Ns, 0.2*self.Ns])
         c_prev = 0.1
         KM_prev = 10**-3
         X0 = guess_create(equations, X0, c_prev, KM_prev)
+        print(X0)
         c_curr = np.mean([self.c, c_prev])
         KM_curr = log_mean(self.KM, KM_prev)
 
@@ -79,6 +80,7 @@ class Solution_Scales:
                 equations(X0, self.c, self.KM, get_values=True)
                 success = True
             except Warning:
+                print('Warning')
                 try:
                     X0 = guess_create(equations, X0, c_curr, KM_curr)
                     c_prev = c_curr
@@ -93,5 +95,11 @@ class Solution_Scales:
         self.solver_sigma_complete = True
 
 
-sol = Solution_Scales(0.1, 2.9)
+sol = Solution_Scales(.1, 2.9)
 sol.solver_sigma()
+print(sol.psi_0)
+print(sol.psi_beta)
+print(sol.psi_d)
+print(sol.sigma_0)
+print(sol.sigma_beta)
+print(sol.sigma_d)
