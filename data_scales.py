@@ -25,6 +25,6 @@ with open('data/scales_fig2_data.csv') as csvfile:
     zeta = []
     for row in datafile:
         pH += [float(row[0])]
-        zeta += [float(row[0])]
+        zeta += [float(row[1])]
     pH_data_fig2 = np.array(pH)
     zeta_data_fig2 = np.array(zeta)
