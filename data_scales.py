@@ -19,8 +19,6 @@ for salt in salts:
     zeta_data_fig1[salt] = zeta
 
 # Figure 2
-pH_data_fig2 = {}
-zeta_data_fig2 = {}
 with open('data/scales_fig2_data.csv') as csvfile:
     datafile = csv.reader(csvfile, delimiter=',', quotechar='|')
     pH = []
