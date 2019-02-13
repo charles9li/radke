@@ -1,14 +1,10 @@
 import numpy as np
 import csv
 
-# Salt list
-salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
-
-# Initiate dictionaries
+# Figure 1
 c_data_fig1 = {}
 zeta_data_fig1 = {}
-
-# Extract data from CSVs
+salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
 for salt in salts:
     with open('data/scales_fig1_data_'+salt+'.csv') as csvfile:
         datafile = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -21,3 +17,16 @@ for salt in salts:
     zeta = np.array(zeta)
     c_data_fig1[salt] = c
     zeta_data_fig1[salt] = zeta
+
+# Figure 2
+pH_data_fig2 = {}
+zeta_data_fig2 = {}
+with open('data/scales_fig2_data.csv') as csvfile:
+    datafile = csv.reader(csvfile, delimiter=',', quotechar='|')
+    pH = []
+    zeta = []
+    for row in datafile:
+        pH += [float(row[0])]
+        zeta += [float(row[0])]
+    pH_data_fig2 = np.array(pH)
+    zeta_data_fig2 = np.array(zeta)
