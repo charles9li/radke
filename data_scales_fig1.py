@@ -5,8 +5,8 @@ import csv
 salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
 
 # Initiate dictionaries
-c_data = {}
-zeta_data = {}
+c_data_fig1 = {}
+zeta_data_fig1 = {}
 
 # Extract data from CSVs
 for salt in salts:
@@ -19,5 +19,5 @@ for salt in salts:
             zeta += [float(row[1])]
     c = np.array(c)
     zeta = np.array(zeta)
-    c_data[salt] = c
-    zeta_data[salt] = zeta
+    c_data_fig1[salt] = c
+    zeta_data_fig1[salt] = zeta
