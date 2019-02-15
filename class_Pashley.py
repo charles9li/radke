@@ -27,6 +27,5 @@ class PashleySolution:
         for D in self.D_list:
             W = (self.kappa**2/(2*np.pi))*Z*np.exp(-self.kappa*D)
             FR = 2*np.pi*W - self.A/(6*D**2)
-            FR = 2*np.pi*W
             self.FR_list[i] = FR
             i += 1
