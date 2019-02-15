@@ -12,19 +12,21 @@ class PashleySolution:
         self.T = T
         self.A = A
         self.kappa = None
-        self.FR_list = np.ones(len(D_list))
+        self.FR_list = None
 
     def compute_kappa(self):
         rho = 1000*N_A*self.c
         self.kappa = np.sqrt(2*rho*e**2/(self.epsilon*k*self.T))
 
     def compute_FR(self):
+        self.FR_list = np.ones(len(self.D_list))
         if self.kappa is None:
             self.compute_kappa()
-        Z = 64*np.pi*self.epsilon*(k*self.T/e)**2
+        Z = 64*np.pi*self.epsilon*(k*self.T/e)**2*np.tanh(e*self.psi_d/(4*k*self.T))**2
         i = 0
         for D in self.D_list:
             W = (self.kappa**2/(2*np.pi))*Z*np.exp(-self.kappa*D)
             FR = 2*np.pi*W - self.A/(6*D**2)
+            FR = 2*np.pi*W
             self.FR_list[i] = FR
             i += 1
