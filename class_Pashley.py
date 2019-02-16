@@ -25,7 +25,7 @@ class PashleySolution:
         Z = 64*np.pi*self.epsilon*(k*self.T/e)**2*np.tanh(e*self.psi_d/(4*k*self.T))**2
         i = 0
         for D in self.D_list:
-            W = (self.kappa**2/(2*np.pi))*Z*np.exp(-self.kappa*D)
+            W = (self.kappa/(2*np.pi))*Z*np.exp(-self.kappa*D)
             FR = 2*np.pi*W - self.A/(6*D**2)
             self.FR_list[i] = FR
             i += 1
