@@ -11,9 +11,9 @@ def compute_kappa(c, T=298, epsilon=79):
 
 
 # Plot control
-plot_fig1 = False
-plot_fig2 = False
-plot_fig3 = False
+plot_fig1 = True
+plot_fig2 = True
+plot_fig3 = True
 plot_fig4 = True
 
 # Figure 1
@@ -36,6 +36,7 @@ if plot_fig1:
     pashley_fig1_c = np.array(pashley_fig1_c)
     pashley_fig1_slope = np.array(pashley_fig1_slope)
     pashley_fig1_kappa = np.array(pashley_fig1_kappa)
+    plt.title('Pashley fig 1')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [$\mu$N/m]')
     plt.legend(title='Concentration [M]')
@@ -60,6 +61,7 @@ if plot_fig2:
     pashley_fig2_c = np.array(pashley_fig2_c)
     pashley_fig2_slope = np.array(pashley_fig2_slope)
     pashley_fig2_kappa = np.array(pashley_fig2_kappa)
+    plt.title('Pashley fig 2')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [$\mu$N/m]')
     plt.legend(title='Concentration [M]')
@@ -84,6 +86,7 @@ if plot_fig3:
     pashley_fig3_c = np.array(pashley_fig3_c)
     pashley_fig3_slope = np.array(pashley_fig3_slope)
     pashley_fig3_kappa = np.array(pashley_fig3_kappa)
+    plt.title('Pashley fig 3')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [$\mu$N/m]')
     plt.legend(title='Concentration [M]')
@@ -108,6 +111,7 @@ if plot_fig4:
     pashley_fig4_c = np.array(pashley_fig4_c)
     pashley_fig4_slope = np.array(pashley_fig4_slope)
     pashley_fig4_kappa = np.array(pashley_fig4_kappa)
+    plt.title('Pashley fig 4')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [$\mu$N/m]')
     plt.legend(title='Concentration [M]')
