@@ -69,3 +69,18 @@ for c in c_list:
     D = np.array(D)
     FR = np.array(FR)
     pashley_fig4_data += [PashleyData(float(c), D, FR)]
+
+# Figure 5
+c_dict = {}
+zeta_dict = {}
+salt_list = ['LiCl', 'NaCl', 'KCl', 'CsCl']
+for salt in salt_list:
+    with open('data/pashley_fig5_data_'+salt+'.csv') as csvfile:
+        datafile = csv.reader(csvfile, delimiter=',', quotechar='|')
+        c = []
+        zeta = []
+        for row in datafile:
+            c += [float(row[0])]
+            zeta += [float(row[1])]
+    c_dict[salt] = np.array(c)
+    zeta_dict[salt] = np.array(zeta)
