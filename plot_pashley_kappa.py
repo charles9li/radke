@@ -5,8 +5,8 @@ from data_pashley import *
 
 
 # Compute kappa
-def compute_kappa(c, T=298, epsilon=79):
-    rho = 1000*N_A*c
+def compute_kappa(c, pH=5.8, T=298, epsilon=79):
+    rho = 1000*N_A*(c+10**-pH)
     return np.sqrt(2*rho*e**2/(epsilon*epsilon_0*k*T))
 
 
@@ -19,6 +19,7 @@ plot_fig4 = True
 # Figure 1
 if plot_fig1:
     plt.figure(1)
+    pH = 5.4
     pashley_fig1_c = []
     pashley_fig1_slope = []
     pashley_fig1_kappa = []
@@ -27,7 +28,7 @@ if plot_fig1:
     for data in pashley_fig1_data:
         start = start_index[i]
         pashley_fig1_c += [data.c]
-        pashley_fig1_kappa += [compute_kappa(data.c)]
+        pashley_fig1_kappa += [compute_kappa(data.c, pH=pH)]
         slope, intercept, r_value, p_value, std_err = linregress(data.D[start:], np.log(data.FR[start:]))
         pashley_fig1_slope += [slope]
         i += 1
@@ -44,6 +45,7 @@ if plot_fig1:
 # Figure 2
 if plot_fig2:
     plt.figure(2)
+    pH = 5.7
     pashley_fig2_c = []
     pashley_fig2_slope = []
     pashley_fig2_kappa = []
@@ -52,7 +54,7 @@ if plot_fig2:
     for data in pashley_fig2_data:
         start = start_index[i]
         pashley_fig2_c += [data.c]
-        pashley_fig2_kappa += [compute_kappa(data.c)]
+        pashley_fig2_kappa += [compute_kappa(data.c, pH=pH)]
         slope, intercept, r_value, p_value, std_err = linregress(data.D[start:], np.log(data.FR[start:]))
         pashley_fig2_slope += [slope]
         i += 1
@@ -69,6 +71,7 @@ if plot_fig2:
 # Figure 3
 if plot_fig3:
     plt.figure(3)
+    pH = 5.7
     pashley_fig3_c = []
     pashley_fig3_slope = []
     pashley_fig3_kappa = []
@@ -77,7 +80,7 @@ if plot_fig3:
     for data in pashley_fig3_data:
         start = start_index[i]
         pashley_fig3_c += [data.c]
-        pashley_fig3_kappa += [compute_kappa(data.c)]
+        pashley_fig3_kappa += [compute_kappa(data.c, pH=pH)]
         slope, intercept, r_value, p_value, std_err = linregress(data.D[start:], np.log(data.FR[start:]))
         pashley_fig3_slope += [slope]
         i += 1
