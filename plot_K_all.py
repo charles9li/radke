@@ -11,8 +11,8 @@ from solver import *
 ##############
 
 # K_ads
-K_Li = 10**0.1
-K_Na = 10**0.1
+K_Li = 10**-6
+K_Na = 10**-6
 K_K = 10**2.8
 K_Cs = 10**3
 K_ads_list = [K_Li, K_Na, K_K, K_Cs]
@@ -54,7 +54,7 @@ for salt in salts:
     K_ads = K_ads_list[i]
     C1 = C1_list[i]
     C2 = C2_list[i]
-    c_list = 10**np.linspace(-5, -1, 100)
+    c_list = 10**np.linspace(-5, -1, 20)
     zeta_list = np.zeros(len(c_list))
     j = 0
     for c in c_list:
@@ -99,6 +99,8 @@ font_size = 15
 plt.title('Scales fig 2')
 plt.xlabel('pH', fontsize=font_size)
 plt.ylabel('Zeta potential [mV]', fontsize=font_size)
+
+# Osman fig 1
 
 
 plt.show()
