@@ -2,7 +2,7 @@
 IONIC RADII
 ===========
 
-Provides crystollographic and Stoke's ionic radii for a number of ions.
+Provides crystallographic and Stoke's ionic radii for a number of ions.
 
 """
 
