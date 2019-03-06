@@ -11,10 +11,11 @@ Provides crystollographic and Stoke's ionic radii for a number of ions.
 # IONIC RADII #
 ###############
 
-R_Li = 60e-12	# Li+ radius	(m)
-R_Na = 98e-12	# Na+ radius	(m)
-R_K = 133e-12	# K+ radius		(m)
-R_Rb = 148e-12	# Rb+ radius	(m)
+R_Li = 60e-12   # Li+ radius	(m)
+R_Na = 98e-12   # Na+ radius	(m)
+R_K = 133e-12   # K+ radius	    (m)
+R_Rb = 148e-12  # Rb+ radius   (m)
+R_Cs = 169e-12  # Cs+ radius   (m)
 R_Be = 31e-12	# Be^2+ radius	(m)
 R_Mg = 65e-12	# Mg^2+ radius	(m)
 R_Ca = 99e-12	# Ca^2+ radius	(m)
