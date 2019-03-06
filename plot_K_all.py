@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 from data_scales import *
 from data_osman import *
+from line_marker import *
 from radii import *
 from solver import *
-from line_marker import *
-from scipy.constants import epsilon_0
 
 
 ##############
@@ -14,7 +13,7 @@ from scipy.constants import epsilon_0
 # K_ads
 K_Li = 10**0.1
 K_Na = 10**0.1
-K_K = 10**2.5
+K_K = 10**2.8
 K_Cs = 10**3
 K_ads_list = [K_Li, K_Na, K_K, K_Cs]
 
@@ -74,13 +73,32 @@ for salt in salts:
     plt.plot(np.log10(c_list), zeta_list*1000,
              linestyle=next(lines))
 font_size = 15
-plt.rc('font', size=font_size)
-plt.rc('axes', labelsize=font_size)
-plt.rc('xtick', labelsize=font_size)
-plt.rc('ytick', labelsize=font_size)
 plt.title('Scales fig 1')
 plt.xlabel('log$_{10}(c)$ [mol/L]', fontsize=font_size)
 plt.ylabel('Zeta potential [mV]', fontsize=font_size)
 plt.legend()
+
+# Scales fig 2
+plt.figure('Scales fig 2')
+plt.scatter(pH_data_fig2, zeta_data_fig2)
+pH_list = np.linspace(4, 10, 50)
+zeta_list = np.zeros(len(pH_list))
+i = 0
+for pH in pH_list:
+    c_list1 = np.array([1e-3+10**-pH, 1e-3, 10**-pH])
+    K_list = np.array([K_K, 10**pKa])
+    z_list = np.array([-1, 1, 1])
+    v_list = np.array([False, True, True])
+    sol = Solution_1plate(c_list1, K_list, z_list, v_list,
+                          pH_effect=False, C_1=C1_K, C_2=C2_K)
+    sol.solver_sigma()
+    zeta_list[i] = sol.psi_d
+    i += 1
+plt.plot(pH_list, zeta_list*1000)
+font_size = 15
+plt.title('Scales fig 2')
+plt.xlabel('pH', fontsize=font_size)
+plt.ylabel('Zeta potential [mV]', fontsize=font_size)
+
 
 plt.show()
