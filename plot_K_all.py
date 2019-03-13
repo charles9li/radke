@@ -11,8 +11,8 @@ from solver import *
 ##############
 
 # K_ads
-K_Li = 10**0.5
-K_Na = 10**2
+K_Li = 10**0.3
+K_Na = 10**0.8
 K_K = 10**2.8
 K_Cs = 10**3
 K_ads_list = [K_Li, K_Na, K_K, K_Cs]
@@ -118,7 +118,7 @@ if plot_osman_fig1:
     cCl = 0.67976
     plt.figure('Osman fig 1')
     plt.scatter(frac_A_list_data_fig1, frac_ads_list_data_fig1)
-    frac_A_list = np.linspace(0.1, 0.99, 5)
+    frac_A_list = np.linspace(0.1, 0.99, 50)
     frac_ads_list = np.zeros(len(frac_A_list))
     i = 0
     for frac_A in frac_A_list:
@@ -130,20 +130,28 @@ if plot_osman_fig1:
         v_list = np.array([False, True, True, True])
         sol = Solution_1plate(c_list1, K_list, z_list, v_list,
                               pH_effect=False, C_1=C1_Na, C_2=C2_Na)
-        sol.bound_diffuse()
-        ads_tot = np.sum(sol.SM_list) + np.sum(sol.bound_diffuse_list[1:-1])
-        frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
+        # sol.bound_diffuse()
+        # ads_tot = np.sum(sol.SM_list[0:2]) + np.sum(sol.bound_diffuse_list[1:-1])
+        # frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
+
+        sol.solver_sigma()
+        frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
+
         i += 1
     plt.plot(frac_A_list, frac_ads_list)
+    fontsize = 15
+    plt.title('Osman Fig 1 - Na-Li', fontsize=fontsize)
+    plt.xlabel('[Na+]/[Cl-]', fontsize=fontsize)
+    plt.ylabel('$\Gamma_M$/CEC', fontsize=fontsize)
 
 # Osman, fig 2
-plot_osman_fig2 = False
+plot_osman_fig2 = True
 if plot_osman_fig2:
     pH = 5.8
     cCl = 0.6435
     plt.figure('Osman fig 2')
     plt.scatter(frac_A_list_data_fig2, frac_ads_list_data_fig2)
-    frac_A_list = np.linspace(0.1, 0.99, 5)
+    frac_A_list = np.linspace(0.001, 0.99, 100)
     frac_ads_list = np.zeros(len(frac_A_list))
     i = 0
     for frac_A in frac_A_list:
@@ -155,11 +163,84 @@ if plot_osman_fig2:
         v_list = np.array([False, True, True, True])
         sol = Solution_1plate(c_list1, K_list, z_list, v_list,
                               pH_effect=False, C_1=C1_Na, C_2=C2_Na)
-        sol.bound_diffuse()
-        ads_tot = np.sum(sol.SM_list) + np.sum(sol.bound_diffuse_list[1:-1])
-        frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
+        # sol.bound_diffuse()
+        # ads_tot = np.sum(sol.SM_list) + np.sum(sol.bound_diffuse_list[1:-1])
+        # frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
+
+        sol.solver_sigma()
+        frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
+
         i += 1
     plt.plot(frac_A_list, frac_ads_list)
+    fontsize = 15
+    plt.title('Osman Fig 2 - K-Li', fontsize=fontsize)
+    plt.xlabel('[K+]/[Cl-]', fontsize=fontsize)
+    plt.ylabel('$\Gamma_M$/CEC', fontsize=fontsize)
+
+# Osman, fig 4
+plot_osman_fig4 = True
+if plot_osman_fig4:
+    pH = 5.8
+    cCl = 0.66163
+    plt.figure('Osman fig 4')
+    plt.scatter(frac_A_list_data_fig4, frac_ads_list_data_fig4)
+    frac_A_list = np.linspace(0.001, 0.99, 100)
+    frac_ads_list = np.zeros(len(frac_A_list))
+    i = 0
+    for frac_A in frac_A_list:
+        c1 = frac_A*cCl
+        c2 = (1-frac_A)*cCl
+        c_list1 = np.array([cCl+10**-pH, c1, c2, 10**-pH])
+        K_list = np.array([K_Cs, K_Li, 10**pKa])
+        z_list = np.array([-1, 1, 1, 1])
+        v_list = np.array([False, True, True, True])
+        sol = Solution_1plate(c_list1, K_list, z_list, v_list,
+                              pH_effect=False, C_1=C1_Na, C_2=C2_Na)
+        # sol.bound_diffuse()
+        # ads_tot = np.sum(sol.SM_list) + np.sum(sol.bound_diffuse_list[1:-1])
+        # frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
+
+        sol.solver_sigma()
+        frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
+
+        i += 1
+    plt.plot(frac_A_list, frac_ads_list)
+    fontsize = 15
+    plt.title('Osman Fig 4 - Cs-Li', fontsize=fontsize)
+    plt.xlabel('[Cs+]/[Cl-]', fontsize=fontsize)
+    plt.ylabel('$\Gamma_M$/CEC', fontsize=fontsize)
+
+
+#########
+# SIGMA #
+#########
+
+plot_sigma_K = True
+if plot_sigma_K:
+    pH = 5.8
+    plt.figure('sigma vary K c = 1e-3')
+    c_list = np.array([1e-1, 1e-2, 1e-3])
+    for c in c_list:
+        K_list = 10**np.linspace(-3, 3, 20)
+        sigma_d_list = np.zeros(len(K_list))
+        i = 0
+        for K in K_list:
+            c_list1 = np.array([c+10**-pH, c, 10**-pH])
+            K_list1 = np.array([K, 10**pKa])
+            z_list = np.array([-1, 1, 1])
+            v_list = np.array([False, True, True])
+            sol = Solution_1plate(c_list1, K_list1, z_list, v_list,
+                                  pH_effect=False, C_1=C1_Li, C_2=C2_Li)
+            sol.solver_sigma()
+            sigma_d_list[i] = sol.sigma_d
+            i += 1
+        plt.plot(np.log10(K_list), sigma_d_list, label='10$^{%i}$' % np.log10(c))
+    fontsize = 15
+    plt.title('$\sigma_d$ vs $K_M$ for various conc', fontsize=fontsize)
+    plt.xlabel('p$K_M$', fontsize=fontsize)
+    plt.ylabel('$\sigma_d$ [C/m$^2$]', fontsize=fontsize)
+    plt.text(-2, 0.003, 'p$K_a$ = %.1f\npH = %.1f\n$C_1$ = %i $\mu$F/cm$^2$\n$C_2$ = %i $\mu$F/cm$^2$' % (pKa, pH, C1_Li*100, C2_Li*100), fontsize=fontsize)
+    plt.legend(title='Conc [M]')
 
 
 ######################
@@ -167,7 +248,7 @@ if plot_osman_fig2:
 ######################
 
 # LiCl, vary concentration
-plot_LiCl_conc = False
+plot_LiCl_conc = True
 if plot_LiCl_conc:
     pH = 5.8
     plt.figure('LiCl potential profile vary concentration')
@@ -187,14 +268,17 @@ if plot_LiCl_conc:
         psi = np.concatenate((np.array([sol.psi_0, sol.psi_beta]), sol.psi))
         plt.plot(x*1e9, psi*1000, label='10$^{%i}$' % np.log10(c))
         i += 1
-    plt.title('$\psi$ vs x for LiCl at various conc')
-    plt.xlabel('x [nm]')
-    plt.ylabel('$\psi$ [mV]')
+    plt.plot(np.array([0, 0]), np.array([-700, 0]), color='k', linestyle='--', linewidth=1)
+    plt.plot(np.array([-2*R_Li_hyd, -2*R_Li_hyd])*1e9, np.array([-700, 0]), color='k', linestyle='--', linewidth=1)
+    fontsize = 15
+    plt.title('$\psi$ vs x for LiCl at various conc', fontsize=fontsize)
+    plt.xlabel('x [nm]', fontsize=fontsize)
+    plt.ylabel('$\psi$ [mV]', fontsize=fontsize)
     plt.legend(title='Conc [M]')
-    plt.text(20, -200, 'p$K_M = %.1f$\np$K_a$ = %.1f\npH = %.1f' % (np.log10(K_Li), pKa, pH))
+    plt.text(20, -400, 'p$K_M = %.1f$\np$K_a$ = %.1f\npH = %.1f\n$C_1$ = %i $\mu$F/cm$^2$\n$C_2$ = %i $\mu$F/cm$^2$' % (np.log10(K_Li), pKa, pH, C1_Li*100, C2_Li*100), fontsize=fontsize)
 
 # LiCl, vary K
-plot_LiCl_K = False
+plot_LiCl_K = True
 if plot_LiCl_K:
     c = 1e-1
     pH = 5.8
@@ -215,11 +299,14 @@ if plot_LiCl_K:
         psi = np.concatenate((np.array([sol.psi_0, sol.psi_beta]), sol.psi))
         plt.plot(x*1e9, psi*1000, label='%.1f' % np.log10(K))
         i += 1
-    plt.title('$\psi$ vs x for LiCl at various K')
-    plt.xlabel('x [nm]')
-    plt.ylabel('$\psi$ [mV]')
+    plt.plot(np.array([0, 0]), np.array([-700, 0]), color='k', linestyle='--', linewidth=1)
+    plt.plot(np.array([-2*R_Li_hyd, -2*R_Li_hyd])*1e9, np.array([-700, 0]), color='k', linestyle='--', linewidth=1)
+    fontsize = 15
+    plt.title('$\psi$ vs x for LiCl at various K', fontsize=fontsize)
+    plt.xlabel('x [nm]', fontsize=fontsize)
+    plt.ylabel('$\psi$ [mV]', fontsize=fontsize)
     plt.legend(title='p$K_M$')
-    plt.text(3, -200, 'c = %.1f M\np$K_a$ = %.1f\npH = %.1f' % (c, pKa, pH))
+    plt.text(2, -400, 'p$K_M = %.1f$\np$K_a$ = %.1f\npH = %.1f\n$C_1$ = %i $\mu$F/cm$^2$\n$C_2$ = %i $\mu$F/cm$^2$' % (np.log10(K_Li), pKa, pH, C1_Li*100, C2_Li*100), fontsize=fontsize)
 
 
 plt.show()
