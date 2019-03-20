@@ -1,9 +1,12 @@
 import matplotlib.pyplot as plt
-from data_scales import *
+from data_israelachvili import *
 from data_osman import *
+from data_pashley import *
+from data_scales import *
 from line_marker import *
 from radii import *
 from solver import *
+from solvers import *
 
 
 ##############
@@ -12,7 +15,7 @@ from solver import *
 
 # K_ads
 K_Li = 10**0.3
-K_Na = 10**0.8
+K_Na = 10**0.7
 K_K = 10**2.8
 K_Cs = 10**3
 K_ads_list = [K_Li, K_Na, K_K, K_Cs]
@@ -43,12 +46,29 @@ C2_Cs = eps2/(2*R_Cs_hyd)
 C2_list = [C2_Li, C2_Na, C2_K, C2_Cs]
 
 
+###################
+# PLOT PERMISSION #
+###################
+plot_scales_fig1 = False
+plot_scales_fig2 = False
+plot_osman_fig1 = False
+plot_osman_fig2 = False
+plot_osman_fig4 = False
+plot_sigma_K = False
+plot_LiCl_conc = False
+plot_LiCl_K = False
+plot_pashley_fig1 = True
+plot_pashley_fig2 = True
+plot_pashley_fig3 = True
+plot_pashley_fig4 = True
+plot_israelachvili_fig3 = True
+
+
 #########
 # PLOTS #
 #########
 
 # Scales fig 1
-plot_scales_fig1 = True
 if plot_scales_fig1:
     # plt.figure('Scales fig 1')
     i = 0
@@ -87,7 +107,6 @@ if plot_scales_fig1:
         i += 1
 
 # Scales fig 2
-plot_scales_fig2 = True
 if plot_scales_fig2:
     plt.figure('Scales fig 2')
     plt.scatter(pH_data_fig2, zeta_data_fig2, label='exp')
@@ -112,7 +131,6 @@ if plot_scales_fig2:
     plt.legend(title='p$K_M$ = %.1f\np$K_a$ = %.1f\n$C_1$ = %i $\mu$F/cm$^2$\n$C_2$ = %i $\mu$F/cm$^2$' % (np.log10(K_K), pKa, C1_K*100, C2_K*100))
 
 # Osman fig 1
-plot_osman_fig1 = True
 if plot_osman_fig1:
     pH = 5.8
     cCl = 0.67976
@@ -145,7 +163,6 @@ if plot_osman_fig1:
     plt.ylabel('$\Gamma_M$/CEC', fontsize=fontsize)
 
 # Osman, fig 2
-plot_osman_fig2 = True
 if plot_osman_fig2:
     pH = 5.8
     cCl = 0.6435
@@ -178,7 +195,6 @@ if plot_osman_fig2:
     plt.ylabel('$\Gamma_M$/CEC', fontsize=fontsize)
 
 # Osman, fig 4
-plot_osman_fig4 = True
 if plot_osman_fig4:
     pH = 5.8
     cCl = 0.66163
@@ -215,9 +231,9 @@ if plot_osman_fig4:
 # SIGMA #
 #########
 
-plot_sigma_K = True
 if plot_sigma_K:
     pH = 5.8
+    pKa = 3
     plt.figure('sigma vary K c = 1e-3')
     c_list = np.array([1e-1, 1e-2, 1e-3])
     for c in c_list:
@@ -248,7 +264,6 @@ if plot_sigma_K:
 ######################
 
 # LiCl, vary concentration
-plot_LiCl_conc = True
 if plot_LiCl_conc:
     pH = 5.8
     plt.figure('LiCl potential profile vary concentration')
@@ -278,7 +293,6 @@ if plot_LiCl_conc:
     plt.text(20, -400, 'p$K_M = %.1f$\np$K_a$ = %.1f\npH = %.1f\n$C_1$ = %i $\mu$F/cm$^2$\n$C_2$ = %i $\mu$F/cm$^2$' % (np.log10(K_Li), pKa, pH, C1_Li*100, C2_Li*100), fontsize=fontsize)
 
 # LiCl, vary K
-plot_LiCl_K = True
 if plot_LiCl_K:
     c = 1e-1
     pH = 5.8
@@ -306,7 +320,182 @@ if plot_LiCl_K:
     plt.xlabel('x [nm]', fontsize=fontsize)
     plt.ylabel('$\psi$ [mV]', fontsize=fontsize)
     plt.legend(title='p$K_M$')
-    plt.text(2, -400, 'p$K_M = %.1f$\np$K_a$ = %.1f\npH = %.1f\n$C_1$ = %i $\mu$F/cm$^2$\n$C_2$ = %i $\mu$F/cm$^2$' % (np.log10(K_Li), pKa, pH, C1_Li*100, C2_Li*100), fontsize=fontsize)
+    plt.text(2, -400, 'c = %.1f M\np$K_a$ = %.1f\npH = %.1f\n$C_1$ = %i $\mu$F/cm$^2$\n$C_2$ = %i $\mu$F/cm$^2$' % (c, pKa, pH, C1_Li*100, C2_Li*100), fontsize=fontsize)
+
+
+################
+# FORCE CURVES #
+################
+
+def compute_kappa(c, pH=5.8, T=298, epsilon=79):
+    rho = 1000*N_A*(c+10**-pH)
+    return np.sqrt(2*rho*e**2/(epsilon*epsilon_0*k*T))
+
+
+# Pashley, fig 1
+if plot_pashley_fig1:
+    plt.figure('Pashley fig 1')
+    plot_indices = np.array([1, 2])
+    for plot_index in plot_indices:
+        data = pashley_fig1_data[plot_index]
+        plt.scatter(data.D, data.FR/1e3)
+        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        FR_list = np.zeros(len(D_list))
+        i = 0
+        for D in D_list:
+            sol = solver_2plate_2cation_ads(data.c, 10**-pH, K_Li, 10**pKa, D,
+                                            C_1=C1_Li, C_2=C2_Li)
+            rho_c_interp = interp1d(sol.x, sol.cation_1, 'cubic')
+            rho_H_interp = interp1d(sol.x, sol.cation_2, 'cubic')
+            rho_Cl_interp = interp1d(sol.x, sol.anion, 'cubic')
+            rho_tot_m = rho_c_interp(D/2) + rho_H_interp(D/2) + rho_Cl_interp(D/2)
+            rho_tot_bulk = 2*N_A*1000*(data.c + 10**-pH)
+
+            P = k*298*(rho_tot_m - rho_tot_bulk)
+            W = P/compute_kappa(data.c)
+            FR = 2*np.pi*W
+            W_H = -2.2e-20/(12*np.pi*D**2)
+            FR_H = 2*np.pi*W_H
+            FR_list[i] = FR + FR_H
+            i += 1
+
+        plt.semilogy(D_list*1e9, FR_list*1000, label='%.0e' % data.c)
+    plt.title('Pashley Fig 1 - LiCl')
+    plt.xlabel('D [nm]')
+    plt.ylabel('F/R [mN/m]')
+    plt.legend()
+
+# Pashley, fig 2
+if plot_pashley_fig2:
+    plt.figure('Pashley fig 2')
+    plot_indices = np.array([1, 2])
+    for plot_index in plot_indices:
+        data = pashley_fig2_data[plot_index]
+        plt.scatter(data.D, data.FR/1e3)
+        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        FR_list = np.zeros(len(D_list))
+        i = 0
+        for D in D_list:
+            sol = solver_2plate_2cation_ads(data.c, 10**-pH, K_Na, 10**pKa, D,
+                                            C_1=C1_Li, C_2=C2_Li)
+            rho_c_interp = interp1d(sol.x, sol.cation_1, 'cubic')
+            rho_H_interp = interp1d(sol.x, sol.cation_2, 'cubic')
+            rho_Cl_interp = interp1d(sol.x, sol.anion, 'cubic')
+            rho_tot_m = rho_c_interp(D/2) + rho_H_interp(D/2) + rho_Cl_interp(D/2)
+            rho_tot_bulk = 2*N_A*1000*(data.c + 10**-pH)
+
+            P = k*298*(rho_tot_m - rho_tot_bulk)
+            W = P/compute_kappa(data.c)
+            FR = 2*np.pi*W
+            W_H = -2.2e-20/(12*np.pi*D**2)
+            FR_H = 2*np.pi*W_H
+            FR_list[i] = FR + FR_H
+            i += 1
+
+        plt.semilogy(D_list*1e9, FR_list*1000, label='%.0e' % data.c)
+    plt.title('Pashley Fig 2 - NaCl')
+    plt.xlabel('D [nm]')
+    plt.ylabel('F/R [mN/m]')
+    plt.legend()
+
+# Pashley, fig 3
+if plot_pashley_fig3:
+    plt.figure('Pashley fig 3')
+    plot_indices = np.array([1, 2])
+    for plot_index in plot_indices:
+        data = pashley_fig3_data[plot_index]
+        plt.scatter(data.D, data.FR/1e3)
+        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        FR_list = np.zeros(len(D_list))
+        i = 0
+        for D in D_list:
+            sol = solver_2plate_2cation_ads(data.c, 10**-pH, K_Na, 10**pKa, D,
+                                            C_1=C1_Li, C_2=C2_Li)
+            rho_c_interp = interp1d(sol.x, sol.cation_1, 'cubic')
+            rho_H_interp = interp1d(sol.x, sol.cation_2, 'cubic')
+            rho_Cl_interp = interp1d(sol.x, sol.anion, 'cubic')
+            rho_tot_m = rho_c_interp(D/2) + rho_H_interp(D/2) + rho_Cl_interp(D/2)
+            rho_tot_bulk = 2*N_A*1000*(data.c + 10**-pH)
+
+            P = k*298*(rho_tot_m - rho_tot_bulk)
+            W = P/compute_kappa(data.c)
+            FR = 2*np.pi*W
+            W_H = -2.2e-20/(12*np.pi*D**2)
+            FR_H = 2*np.pi*W_H
+            FR_list[i] = FR + FR_H
+            i += 1
+
+        plt.semilogy(D_list*1e9, FR_list*1000, label='%.0e' % data.c)
+    plt.title('Pashley Fig 3 - KCl')
+    plt.xlabel('D [nm]')
+    plt.ylabel('F/R [mN/m]')
+    plt.legend()
+
+# Pashley, fig 4
+if plot_pashley_fig4:
+    plt.figure('Pashley fig 4')
+    plot_indices = np.array([2])
+    for plot_index in plot_indices:
+        data = pashley_fig4_data[plot_index]
+        plt.scatter(data.D, data.FR/1e3)
+        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        FR_list = np.zeros(len(D_list))
+        i = 0
+        for D in D_list:
+            sol = solver_2plate_2cation_ads(data.c, 10**-pH, K_Na, 10**pKa, D,
+                                            C_1=C1_Li, C_2=C2_Li)
+            rho_c_interp = interp1d(sol.x, sol.cation_1, 'cubic')
+            rho_H_interp = interp1d(sol.x, sol.cation_2, 'cubic')
+            rho_Cl_interp = interp1d(sol.x, sol.anion, 'cubic')
+            rho_tot_m = rho_c_interp(D/2) + rho_H_interp(D/2) + rho_Cl_interp(D/2)
+            rho_tot_bulk = 2*N_A*1000*(data.c + 10**-pH)
+
+            P = k*298*(rho_tot_m - rho_tot_bulk)
+            W = P/compute_kappa(data.c)
+            FR = 2*np.pi*W
+            W_H = -2.2e-20/(12*np.pi*D**2)
+            FR_H = 2*np.pi*W_H
+            FR_list[i] = FR + FR_H
+            i += 1
+
+        plt.semilogy(D_list*1e9, FR_list*1000, label='%.0e' % data.c)
+    plt.title('Pashley Fig 4 - CsCl')
+    plt.xlabel('D [nm]')
+    plt.ylabel('F/R [mN/m]')
+    plt.legend()
+
+# Israelachvili, fig 3
+if plot_israelachvili_fig3:
+    plt.figure('Israelachvili fig 3')
+    plot_indices = np.array([0, 1, 2, 3])
+    for plot_index in plot_indices:
+        data = israelachvili_fig3_data[plot_index]
+        plt.scatter(data.D, data.FR/1e3)
+        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        FR_list = np.zeros(len(D_list))
+        i = 0
+        for D in D_list:
+            sol = solver_2plate_2cation_ads(data.c, 10**-pH, K_K, 10**pKa, D,
+                                            C_1=C1_Li, C_2=C2_Li)
+            rho_c_interp = interp1d(sol.x, sol.cation_1, 'cubic')
+            rho_H_interp = interp1d(sol.x, sol.cation_2, 'cubic')
+            rho_Cl_interp = interp1d(sol.x, sol.anion, 'cubic')
+            rho_tot_m = rho_c_interp(D/2) + rho_H_interp(D/2) + rho_Cl_interp(D/2)
+            rho_tot_bulk = 2*N_A*1000*(data.c + 10**-pH)
+
+            P = k*298*(rho_tot_m - rho_tot_bulk)
+            W = P/compute_kappa(data.c)
+            FR = 2*np.pi*W
+            W_H = -2.2e-20/(12*np.pi*D**2)
+            FR_H = 2*np.pi*W_H
+            FR_list[i] = FR + FR_H
+            i += 1
+
+        plt.semilogy(D_list*1e9, FR_list*1000, label='%.0e' % data.c)
+    plt.title('Israelachvili Fig 4 - CsCl')
+    plt.xlabel('D [nm]')
+    plt.ylabel('F/R [mN/m]')
+    plt.legend()
 
 
 plt.show()
