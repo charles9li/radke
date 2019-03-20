@@ -339,7 +339,7 @@ if plot_pashley_fig1:
     for plot_index in plot_indices:
         data = pashley_fig1_data[plot_index]
         plt.scatter(data.D, data.FR/1e3)
-        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        D_list = np.linspace(data.D[0], data.D[-1], 50)*1e-9
         FR_list = np.zeros(len(D_list))
         i = 0
         for D in D_list:
@@ -363,7 +363,7 @@ if plot_pashley_fig1:
     plt.title('Pashley Fig 1 - LiCl')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [mN/m]')
-    plt.legend()
+    plt.legend(title='Conc [M]')
 
 # Pashley, fig 2
 if plot_pashley_fig2:
@@ -372,7 +372,7 @@ if plot_pashley_fig2:
     for plot_index in plot_indices:
         data = pashley_fig2_data[plot_index]
         plt.scatter(data.D, data.FR/1e3)
-        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        D_list = np.linspace(data.D[0], data.D[-1], 50)*1e-9
         FR_list = np.zeros(len(D_list))
         i = 0
         for D in D_list:
@@ -396,7 +396,7 @@ if plot_pashley_fig2:
     plt.title('Pashley Fig 2 - NaCl')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [mN/m]')
-    plt.legend()
+    plt.legend(title='Conc [M]')
 
 # Pashley, fig 3
 if plot_pashley_fig3:
@@ -405,7 +405,7 @@ if plot_pashley_fig3:
     for plot_index in plot_indices:
         data = pashley_fig3_data[plot_index]
         plt.scatter(data.D, data.FR/1e3)
-        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        D_list = np.linspace(data.D[0], data.D[-1], 50)*1e-9
         FR_list = np.zeros(len(D_list))
         i = 0
         for D in D_list:
@@ -429,7 +429,7 @@ if plot_pashley_fig3:
     plt.title('Pashley Fig 3 - KCl')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [mN/m]')
-    plt.legend()
+    plt.legend(title='Conc [M]')
 
 # Pashley, fig 4
 if plot_pashley_fig4:
@@ -438,7 +438,7 @@ if plot_pashley_fig4:
     for plot_index in plot_indices:
         data = pashley_fig4_data[plot_index]
         plt.scatter(data.D, data.FR/1e3)
-        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        D_list = np.linspace(data.D[0], data.D[-1], 50)*1e-9
         FR_list = np.zeros(len(D_list))
         i = 0
         for D in D_list:
@@ -462,7 +462,7 @@ if plot_pashley_fig4:
     plt.title('Pashley Fig 4 - CsCl')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [mN/m]')
-    plt.legend()
+    plt.legend(title='Conc [M]')
 
 # Israelachvili, fig 3
 if plot_israelachvili_fig3:
@@ -471,7 +471,7 @@ if plot_israelachvili_fig3:
     for plot_index in plot_indices:
         data = israelachvili_fig3_data[plot_index]
         plt.scatter(data.D, data.FR/1e3)
-        D_list = np.linspace(data.D[0], data.D[-1], 4)*1e-9
+        D_list = np.linspace(data.D[0], data.D[-1], 50)*1e-9
         FR_list = np.zeros(len(D_list))
         i = 0
         for D in D_list:
@@ -492,10 +492,10 @@ if plot_israelachvili_fig3:
             i += 1
 
         plt.semilogy(D_list*1e9, FR_list*1000, label='%.0e' % data.c)
-    plt.title('Israelachvili Fig 4 - CsCl')
+    plt.title('Israelachvili Fig 3 - KNO$_3$')
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [mN/m]')
-    plt.legend()
+    plt.legend(title='Conc [M]')
 
 
 plt.show()
