@@ -51,17 +51,17 @@ C2_list = [C2_Li, C2_Na, C2_K, C2_Cs]
 ###################
 plot_scales_fig1 = False
 plot_scales_fig2 = False
-plot_osman_fig1 = False
-plot_osman_fig2 = False
-plot_osman_fig4 = False
+plot_osman_fig1 = True
+plot_osman_fig2 = True
+plot_osman_fig4 = True
 plot_sigma_K = False
 plot_LiCl_conc = False
 plot_LiCl_K = False
-plot_pashley_fig1 = True
-plot_pashley_fig2 = True
-plot_pashley_fig3 = True
-plot_pashley_fig4 = True
-plot_israelachvili_fig3 = True
+plot_pashley_fig1 = False
+plot_pashley_fig2 = False
+plot_pashley_fig3 = False
+plot_pashley_fig4 = False
+plot_israelachvili_fig3 = False
 
 
 #########
@@ -148,12 +148,12 @@ if plot_osman_fig1:
         v_list = np.array([False, True, True, True])
         sol = Solution_1plate(c_list1, K_list, z_list, v_list,
                               pH_effect=False, C_1=C1_Na, C_2=C2_Na)
-        # sol.bound_diffuse()
-        # ads_tot = np.sum(sol.SM_list[0:2]) + np.sum(sol.bound_diffuse_list[1:-1])
-        # frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
+        sol.bound_diffuse()
+        ads_tot = np.sum(sol.SM_list[0:2]) + np.sum(sol.bound_diffuse_list[1:-1])
+        frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
 
-        sol.solver_sigma()
-        frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
+        # sol.solver_sigma()
+        # frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
 
         i += 1
     plt.plot(frac_A_list, frac_ads_list)
@@ -180,12 +180,12 @@ if plot_osman_fig2:
         v_list = np.array([False, True, True, True])
         sol = Solution_1plate(c_list1, K_list, z_list, v_list,
                               pH_effect=False, C_1=C1_Na, C_2=C2_Na)
-        # sol.bound_diffuse()
-        # ads_tot = np.sum(sol.SM_list) + np.sum(sol.bound_diffuse_list[1:-1])
-        # frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
+        sol.bound_diffuse()
+        ads_tot = np.sum(sol.SM_list) + np.sum(sol.bound_diffuse_list[1:-1])
+        frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
 
-        sol.solver_sigma()
-        frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
+        # sol.solver_sigma()
+        # frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
 
         i += 1
     plt.plot(frac_A_list, frac_ads_list)
@@ -212,12 +212,12 @@ if plot_osman_fig4:
         v_list = np.array([False, True, True, True])
         sol = Solution_1plate(c_list1, K_list, z_list, v_list,
                               pH_effect=False, C_1=C1_Na, C_2=C2_Na)
-        # sol.bound_diffuse()
-        # ads_tot = np.sum(sol.SM_list) + np.sum(sol.bound_diffuse_list[1:-1])
-        # frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
+        sol.bound_diffuse()
+        ads_tot = np.sum(sol.SM_list) + np.sum(sol.bound_diffuse_list[1:-1])
+        frac_ads_list[i] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
 
-        sol.solver_sigma()
-        frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
+        # sol.solver_sigma()
+        # frac_ads_list[i] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
 
         i += 1
     plt.plot(frac_A_list, frac_ads_list)
@@ -267,7 +267,7 @@ if plot_sigma_K:
 if plot_LiCl_conc:
     pH = 5.8
     plt.figure('LiCl potential profile vary concentration')
-    c_list = np.array([1e-1, 1e-2, 1e-3])
+    c_list = np.array([1e-1, 1e-2, 1e-3, 1e-4])
     sigma_d_LiCl_conc = np.zeros(len(c_list))
     i = 0
     for c in c_list:
