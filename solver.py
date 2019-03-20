@@ -135,6 +135,74 @@ class Solution_1plate:
         # Indicates that the solver_sigma method has been successfully run
         self.solver_sigma_complete = True
 
+    # # Solve Poisson-Boltzmann to get potential and ion distributions
+    # def solver_PB(self):
+    #
+    #     # Checks to see if solver_sigma method has been successfully called
+    #     if not self.solver_sigma_complete:
+    #         self.solver_sigma()
+    #
+    #     c_list = self.c_list
+    #     z_list = self.z_list
+    #
+    #     # Convert bulk concentrations to number density
+    #     rho_list = 1000*N_A*c_list
+    #
+    #     # Calculated values
+    #     kappa = np.sqrt(e**2*np.sum(rho_list)/(epsilon_0*eps_bulk*k*T))
+    #
+    #     def solver(sigma_d, x_end, psi_guess=None):
+    #
+    #         def fun(x, psi):
+    #             d2psi_dx2 = np.zeros(len(psi[0]))
+    #             for i in range(len(rho_list)):
+    #                 d2psi_dx2 += z_list[i]*rho_list[i]*np.exp(-z_list[i]*e*psi[0]/(k*T))
+    #             d2psi_dx2 *= -e/(epsilon_0*eps_bulk)
+    #             dpsi_dx = psi[1]
+    #             return np.vstack((dpsi_dx, d2psi_dx2))
+    #
+    #         def bc(psia, psib):
+    #             return np.array([psia[1]-sigma_d/(eps_0*eps_bulk), psib[0]])
+    #
+    #         size = 50
+    #         x_dist = np.linspace(0, x_end, size)
+    #
+    #         if psi_guess is None:
+    #             psi_guess = -sigma_d/(eps_0*eps_bulk*kappa)*np.exp(-kappa*x_dist)
+    #             dpsi_guess = sigma_d/(eps_0*eps_bulk)*np.exp(-kappa*x_dist)
+    #             psi_guess = np.vstack((psi_guess, dpsi_guess))
+    #
+    #         res = solve_bvp(fun, bc, x_dist, psi_guess)
+    #         psi = res.sol(x_dist)[0]
+    #         dpsi = res.sol(x_dist)[1]
+    #         return np.vstack((x_dist, psi, dpsi))
+    #
+    #     # Sets overflow errors to warning
+    #     np.seterr(over='warn')
+    #     warnings.filterwarnings('error')
+    #
+    #     # Increases x span until furthest psi value is close enough to 0
+    #     x_end = 1e-9
+    #     sol = solver(self.sigma_d, x_end)
+    #     self.x = sol[0]
+    #     self.psi = sol[1]
+    #     psi_guess = sol[1:]
+    #     while abs((self.psi[0]-self.psi_d)/self.psi_d) > 1e-4:
+    #         x_end += 1e-9
+    #         sol = solver(self.sigma_d, x_end, psi_guess)
+    #         self.x = sol[0]
+    #         self.psi = sol[1]
+    #         psi_guess = sol[1:]
+    #
+    #     # Creates an array of ion number density profiles
+    #     self.rho_list = [rho_list[i]*np.exp(-z_list[i]*e*self.psi/(k*T)) for i in range(len(rho_list))]
+    #
+    #     # Converts each element in all of the number density profiles to float type
+    #     self.rho_list = [np.array([float(r) for r in rho]) for rho in self.rho_list]
+    #
+    #     # Indicates that the solver_PB method has been successfully run
+    #     self.solver_PB_complete = True
+
     # Solve Poisson-Boltzmann to get potential and ion distributions
     def solver_PB(self):
 
@@ -148,51 +216,42 @@ class Solution_1plate:
         # Convert bulk concentrations to number density
         rho_list = 1000*N_A*c_list
 
-        # Calculated values
-        kappa = np.sqrt(e**2*np.sum(rho_list)/(epsilon_0*eps_bulk*k*T))
+        # Differential equation
+        def fun(x, psi):
+            return np.sqrt(2*k*T/(eps_bulk*epsilon_0)*np.sum(rho_list*(np.exp(-z_list*e*psi/(k*T))-1)))
 
-        def solver(sigma_d, x_end, psi_guess=None):
+        # Compute solution at next step
+        def y_next(f, t, y, h):
+            k1 = h*f(t,     y)
+            k2 = h*f(t+h/2, y+k1/2)
+            k3 = h*f(t+h/2, y+k2/2)
+            k4 = h*f(t+h,   y+k3)
+            return y + 1/6*(k1+2*k2+2*k3+k4)
 
-            def fun(x, psi):
-                d2psi_dx2 = np.zeros(len(psi[0]))
-                for i in range(len(rho_list)):
-                    d2psi_dx2 += z_list[i]*rho_list[i]*np.exp(-z_list[i]*e*psi[0]/(k*T))
-                d2psi_dx2 *= -e/(epsilon_0*eps_bulk)
-                dpsi_dx = psi[1]
-                return np.vstack((dpsi_dx, d2psi_dx2))
+        # Initiate x and psi solutions
+        x = [0]
+        psi = [self.psi_d]
 
-            def bc(psia, psib):
-                return np.array([psia[1]-sigma_d/(eps_0*eps_bulk), psib[0]])
+        # Default step size
+        h_default = 1e-9
 
-            size = 50
-            x_dist = np.linspace(0, x_end, size)
+        # Solve ODE
+        while psi[-1] < -1e-5:
+            h = h_default
+            y_next_full = y_next(fun, x[-1], psi[-1], h)
+            y_next_half1 = y_next(fun, x[-1], psi[-1], h/2)
+            y_next_half2 = y_next(fun, x[-1]+h/2, y_next_half1, h/2)
+            while abs(y_next_full - y_next_half2) > 1e-5:
+                h = h/2
+                y_next_full = y_next_half1
+                y_next_half1 = y_next(fun, x[-1], psi[-1], h/2)
+                y_next_half2 = y_next(fun, x[-1]+h/2, y_next_half1, h/2)
+            x += [x[-1]+h/2, x[-1]+h]
+            psi += [y_next_half1, y_next_half2]
 
-            if psi_guess is None:
-                psi_guess = -sigma_d/(eps_0*eps_bulk*kappa)*np.exp(-kappa*x_dist)
-                dpsi_guess = sigma_d/(eps_0*eps_bulk)*np.exp(-kappa*x_dist)
-                psi_guess = np.vstack((psi_guess, dpsi_guess))
-
-            res = solve_bvp(fun, bc, x_dist, psi_guess)
-            psi = res.sol(x_dist)[0]
-            dpsi = res.sol(x_dist)[1]
-            return np.vstack((x_dist, psi, dpsi))
-
-        # Sets overflow errors to warning
-        np.seterr(over='warn')
-        warnings.filterwarnings('error')
-
-        # Increases x span until furthest psi value is close enough to 0
-        x_end = 1e-9
-        sol = solver(self.sigma_d, x_end)
-        self.x = sol[0]
-        self.psi = sol[1]
-        psi_guess = sol[1:]
-        while abs((self.psi[0]-self.psi_d)/self.psi_d) > 1e-4:
-            x_end += 1e-9
-            sol = solver(self.sigma_d, x_end, psi_guess)
-            self.x = sol[0]
-            self.psi = sol[1]
-            psi_guess = sol[1:]
+        # Store x and psi as instance variables
+        self.x = np.array(x)
+        self.psi = np.array(psi)
 
         # Creates an array of ion number density profiles
         self.rho_list = [rho_list[i]*np.exp(-z_list[i]*e*self.psi/(k*T)) for i in range(len(rho_list))]
@@ -202,6 +261,7 @@ class Solution_1plate:
 
         # Indicates that the solver_PB method has been successfully run
         self.solver_PB_complete = True
+
 
     # Compute surface density of each ion bound in the diffuse layer
     def bound_diffuse(self):
