@@ -20,3 +20,15 @@ with open('data/claesson_fig2_data.csv') as csvfile:
 wash = np.vstack((np.array(M_list[0:9]), np.array(S_list[0:9])))
 press = np.vstack((np.array(M_list[9:-1]), np.array(S_list[9:-1])))
 claesson_fig2_data = ClaessonData(wash, press)
+
+# Figure 3
+with open('data/claesson_fig3_data.csv') as csvfile:
+    datafile = csv.reader(csvfile, delimiter=',', quotechar='|')
+    M_list = []
+    S_list = []
+    for row in datafile:
+        M_list += [float(row[0])]
+        S_list += [float(row[1])]
+wash = np.vstack((np.array(M_list[0:5]), np.array(S_list[0:5])))
+press = np.vstack((np.array(M_list[5:-1]), np.array(S_list[5:-1])))
+claesson_fig3_data = ClaessonData(wash, press)
