@@ -236,18 +236,18 @@ class Solution_1plate:
         h_default = 1e-9
 
         # Solve ODE
-        while psi[-1] < -1e-5:
+        while psi[-1] < -1e-8:
             h = h_default
-            y_next_full = y_next(fun, x[-1], psi[-1], h)
-            y_next_half1 = y_next(fun, x[-1], psi[-1], h/2)
-            y_next_half2 = y_next(fun, x[-1]+h/2, y_next_half1, h/2)
-            while abs(y_next_full - y_next_half2) > 1e-5:
+            y_next_2h = y_next(fun, x[-1], psi[-1], 2*h)
+            y_next_h1 = y_next(fun, x[-1], psi[-1], h)
+            y_next_h2 = y_next(fun, x[-1]+h, y_next_h1, h)
+            while abs(y_next_2h - y_next_h2) > 1e-10:
                 h = h/2
-                y_next_full = y_next_half1
-                y_next_half1 = y_next(fun, x[-1], psi[-1], h/2)
-                y_next_half2 = y_next(fun, x[-1]+h/2, y_next_half1, h/2)
-            x += [x[-1]+h/2, x[-1]+h]
-            psi += [y_next_half1, y_next_half2]
+                y_next_2h = y_next_h1
+                y_next_h1 = y_next(fun, x[-1], psi[-1], h)
+                y_next_h2 = y_next(fun, x[-1]+h, y_next_h1, h)
+            x += [x[-1]+h]
+            psi += [y_next_h1]
 
         # Store x and psi as instance variables
         self.x = np.array(x)
