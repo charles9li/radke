@@ -1,0 +1,85 @@
+Abstract
+
+Intro
+- importance of surface charge
+	- how things interact in solution
+	- everything carries a charge (biology, materials)
+- zeta potentials
+- ion exchange
+- surface force
+- describe mica
+- different ways of thinking of mica (Wikipedia)
+	- ppl haven't combined all 3 types of measurements
+	- pashley, israelachvili have tried to measure these quantities, haven't translated across data sets
+- possibly soudek?
+
+Theory
+- triple-layer model
+	- inkscape figure
+	- partially-hyd, fully-hyd
+	- eqns, etc
+		- PB
+	- capacitances
+		- from radii
+- zeta
+- ion exch
+	- how we integrate through diffuse layer
+- surface force
+	- BCs
+	- how we get force from osmotic pressure
+- numerical implementation
+	- solved these eqns using this func
+
+Results and Discussion
+- discuss where charge is
+	- different K values
+	- alkali vs H+
+- get figures
+- dilute solution theory breaks down
+- mention K values, etc that validate model
+	- sensitity to K values
+		- inserts
+
+Appendix
+- how to convert osman data
+
+To do
+- find other ion exchange data
+- fix spikes with code
+- do theory and results section first
+
+
+
+
+Notes 3/27
+- start with SFA work about DLVO
+- they adjust kappa and surface potential
+- charge found is much smaller than number of surface sites
+- deficiences in model
+- refer to previous work (pashley and healy)
+	- take an acid base instead of exchange
+- results
+	- how to get parameters from zeta potentials and ion exchange
+	- works for low ionic strength
+- unified theory is needed
+- put equations in appendices
+
+
+
+
+Figures
+- ticks on both sides (outside is fine)
+- seaborn
+- don't put box around legend
+- can save figures as svg files
+- width
+	- for 2 col, 2.5 in wide
+	- for 1 col, 6.5 col
+- have plot of sigma_d, sigma_beta, e*SM vs K
+- have data and figure in separate file
+
+
+Formatting
+- 14pt font for clay
+
+

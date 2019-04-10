@@ -1,0 +1,5 @@
+look at multiple zeta data
+scales in depth
+double check C1 and C2 for different K
+rewrite numerical discussion
+how K would have to chagne to fit data
