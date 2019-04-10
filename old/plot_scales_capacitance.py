@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from class_Scales import *
+from old.class_Scales import *
 
 # p*KM = 3.0, vary C1
-from line_marker import *
+from old.line_marker import *
 plt.figure('pKM3_varyC1')
 C1_list = np.array([0.5, 1, 5, 10])
 for C1 in C1_list:
@@ -26,7 +26,7 @@ plt.text(-2.5, -120, 'pH = %.1f\np*$K_M$ = %.1f\n$C_2$ = %i $\mu$C/cm$^2$' % (so
 plt.legend(title='$C_1$\n[$\mu$C/cm$^2$]')
 
 # p*KM = 3.0, vary C2
-from line_marker import *
+from old.line_marker import *
 plt.figure('pKM3_varyC2')
 C2_list = np.array([0.5, 1, 5, 10])
 for C2 in C2_list:

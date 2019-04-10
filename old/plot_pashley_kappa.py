@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from scipy.constants import e, k, epsilon_0, N_A
 from scipy.stats import linregress
-from data_pashley import *
+from old.data_pashley import *
 
 
 # Compute kappa

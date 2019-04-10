@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
-from scipy.constants import e, k
-from data_pashley import *
+from old.data_pashley import *
 from class_Pashley import *
 
 # Plot control

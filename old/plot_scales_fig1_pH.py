@@ -3,7 +3,7 @@ import csv
 import itertools
 from scipy.optimize import least_squares
 from solvers import *
-from constants import *
+from old.constants import *
 
 # Parameters
 salt_list = ['LiCl', 'NaCl', 'KCl', 'CsCl']

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from data_scales import *
-from class_Scales import *
+from old.data_scales import *
+from old.class_Scales import *
 
 # Set to true for plot
 fig2 = True
@@ -33,7 +33,7 @@ if fig2:
 
 # Figure 10
 if fig10:
-    from line_marker import *
+    from old.line_marker import *
     plt.figure('plot_scales_fig10')
     salts = ['CsCl', 'KCl']
     pKM = dict(CsCl=2.8, KCl=3.2)
@@ -63,7 +63,7 @@ if fig10:
 
 # Figure 11
 if fig11:
-    from line_marker import *
+    from old.line_marker import *
     plt.figure('plot_scales_fig11')
     salts = ['NaCl', 'LiCl']
     for salt in salts:
