@@ -25,7 +25,7 @@ class Solution_Scales:
 
     def solver_sigma(self):
 
-        def equations(X0, c, KM, pH, get_values=False):
+        def equations(X0, c, KM, pH, C1, C2, get_values=False):
 
             # Unpack variables
             psi_d, SM, SH = X0
@@ -40,11 +40,11 @@ class Solution_Scales:
             sigma_d = -psi_d/abs(psi_d)*np.sqrt(2*R*self.T*self.eps*epsilon_0*(c_d_sum - c_bulk_sum))
 
             # Compute quantities
-            psi_beta = psi_d - sigma_d/self.C2
+            psi_beta = psi_d - sigma_d/C2
             S = self.Ns - SM - SH
             sigma_beta = e*SM
             sigma_0 = -e*(S + SM)
-            psi_0 = psi_beta + sigma_0/self.C1
+            psi_0 = psi_beta + sigma_0/C1
 
             # # Equations
             # S = self.Ns - SM - SH
@@ -76,8 +76,8 @@ class Solution_Scales:
         warnings.filterwarnings('error')
 
         # Helper function to create new guesses
-        def guess_create(equations, guess, c, KM, pH):
-            root_func = lambda X0: equations(X0, c, KM, pH)
+        def guess_create(equations, guess, c, KM, pH, C1, C2):
+            root_func = lambda X0: equations(X0, c, KM, pH, C1, C2)
             solution = root(root_func, guess, method='lm', tol=1e-10)
             return solution.x
 
@@ -90,31 +90,41 @@ class Solution_Scales:
         c_prev = 0.1
         KM_prev = 10**-2.9
         pH_prev = 5.8
-        X0 = guess_create(equations, X0, c_prev, KM_prev, pH_prev)
+        C1_prev = 10
+        C2_prev = 2
+        X0 = guess_create(equations, X0, c_prev, KM_prev, pH_prev, C1_prev, C2_prev)
         c_curr = np.mean([self.c, c_prev])
         KM_curr = log_mean(self.KM, KM_prev)
         pH_curr = np.mean([self.pH, pH_prev])
+        C1_curr = np.mean([self.C1, C1_prev])
+        C2_curr = np.mean([self.C2, C2_prev])
 
         # Iterate through c, KM, and pH values to update guess until convergence
         success = False
         while not success:
             try:
-                X0 = guess_create(equations, X0, self.c, self.KM, self.pH)
-                equations(X0, self.c, self.KM, self.pH, get_values=True)
+                X0 = guess_create(equations, X0, self.c, self.KM, self.pH, self.C1, self.C2)
+                equations(X0, self.c, self.KM, self.pH, self.C1, self.C2, get_values=True)
                 success = True
             except Warning:
                 try:
-                    X0 = guess_create(equations, X0, c_curr, KM_curr, pH_curr)
+                    X0 = guess_create(equations, X0, c_curr, KM_curr, pH_curr, C1_curr, C2_curr)
                     c_prev = c_curr
                     KM_prev = KM_curr
                     pH_prev = pH_curr
+                    C1_prev = C1_curr
+                    C2_prev = C2_curr
                     c_curr = np.mean([self.c, c_curr])
                     KM_curr = log_mean(self.KM, KM_curr)
                     pH_curr = np.mean([self.pH, pH_curr])
+                    C1_curr = np.mean([self.C1, C1_curr])
+                    C2_curr = np.mean([self.C2, C2_curr])
                 except Warning:
                     c_curr = np.mean([c_prev, c_curr])
                     KM_curr = log_mean(KM_prev, KM_curr)
                     pH_curr = np.mean([pH_prev, pH_curr])
+                    C1_curr = np.mean([C1_prev, C1_curr])
+                    C2_curr = np.mean([C2_prev, C2_curr])
 
         # Indications that the solver sigma method has been successfully run
         self.solver_sigma_complete = True

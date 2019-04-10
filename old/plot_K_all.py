@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from data_claesson import *
 from data_israelachvili import *
 from data_osman import *
 from data_pashley import *
@@ -49,13 +50,15 @@ C2_list = [C2_Li, C2_Na, C2_K, C2_Cs]
 ###################
 # PLOT PERMISSION #
 ###################
+
 plot_scales_fig1 = False
 plot_scales_fig2 = False
-plot_osman_fig1 = True
-plot_osman_fig2 = True
-plot_osman_fig4 = True
+plot_osman_fig1 = False
+plot_osman_fig2 = False
+plot_osman_fig4 = False
+plot_claesson_fig2 = False
 plot_sigma_K = False
-plot_LiCl_conc = False
+plot_LiCl_conc = True
 plot_LiCl_K = False
 plot_pashley_fig1 = False
 plot_pashley_fig2 = False
@@ -225,6 +228,38 @@ if plot_osman_fig4:
     plt.title('Osman Fig 4 - Cs-Li', fontsize=fontsize)
     plt.xlabel('[Cs+]/[Cl-]', fontsize=fontsize)
     plt.ylabel('$\Gamma_M$/CEC', fontsize=fontsize)
+
+# Claesson, fig 2
+if plot_claesson_fig2:
+    pH = 5.8
+    plt.figure('Claesson fig 2')
+    plt.scatter(
+        claesson_fig2_data.wash[0], claesson_fig2_data.wash[1],
+        label='wash')
+    plt.scatter(
+        claesson_fig2_data.press[0], claesson_fig2_data.press[1],
+        label='press')
+    M_list = np.linspace(1, 6, 100)
+    S_list = np.zeros(len(M_list))
+    i = 0
+    for M in M_list:
+        cH = 10**-pH
+        c = M*10*cH
+        cCl = c + cH
+        c_list = np.array([cCl, c, cH])
+        K_list = np.array([K_Na, 10**pKa])
+        z_list = np.array([-1, 1, 1])
+        v_list = np.array([False, True, True])
+        sol = Solution_1plate(c_list, K_list, z_list, v_list,
+                              pH=pH, pKa=pKa, pH_effect=False,
+                              C_1=C1_Na, C_2=C2_Na)
+        sol.solver_sigma()
+        S_list[i] = sol.SM_list[0]/100
+        i += 1
+    plt.semilogy(M_list, S_list, label='model')
+    plt.legend()
+    plt.yscale('log')
+    plt.xlim((7, 0))
 
 
 #########

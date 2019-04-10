@@ -6,7 +6,6 @@ from scipy.interpolate import interp1d
 # Parameters
 log10c_list = np.linspace(-5, -1, 10)
 K_ads = 10**3.151010098187411
-K_ads = 100
 pH = 5.8
 pKa = 5.3
 C1 = 10

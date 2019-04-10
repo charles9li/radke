@@ -1,21 +1,18 @@
-import numpy as np 
 import matplotlib.pyplot as plt
 import csv
-import time
 import itertools
 from scipy.optimize import minimize, curve_fit, least_squares
 from solver import *
 from constants import *
 
 # Parameters
-# salt_list = ['LiCl', 'NaCl', 'KCl', 'CsCl']
 salt_list = ['LiCl', 'NaCl', 'KCl', 'CsCl']
 pH = 5.8
 C_1 = 10
 C_2 = 2
 
 marker = itertools.cycle(('o', 'v', 's', '8', 'p', '^', '<', '>'))
-line = itertools.cycle(("-","--",":","-."))
+line = itertools.cycle(("-", "--", ":", "-."))
 
 # Initialize lines and points
 lines = []
@@ -88,7 +85,7 @@ pKa_dict['CsCl'] = 5.33
 
 for salt in salt_list:
 	K_ads = K_ads_dict[salt]
-	pKa = pKa_dict[salt]
+	pKa = 5.6
 	c_list = 10**np.linspace(-5, -1.5, 50)
 	zeta_list = np.zeros(len(c_list))
 	i = 0

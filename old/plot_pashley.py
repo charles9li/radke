@@ -30,6 +30,7 @@ if plot_fig2:
     c_list = []
     zeta_list = np.array([116.8, 120, 145.4, 70])/-1000
     kappa_list = 1e9/np.array([21.13, 16.24, 7.65, 2.66])
+    sigma_0_list = np.zeros(len(kappa_list))
     for i in range(len(pashley_fig2_data)):
         data = pashley_fig2_data[i]
         c = data.c
@@ -41,6 +42,8 @@ if plot_fig2:
         sol = PashleySolution(c, zeta, np.linspace(D[0], D[-1])*1e-9)
         sol.kappa = kappa_list[i]
         sol.compute_FR()
+        sol.compute_sigma_0()
+        sigma_0_list[i] = sol.sigma_0
         plt.semilogy(sol.D_list*1e9, sol.FR_list*1e3)
     plt.xlabel('D [nm]')
     plt.ylabel('F/R [mN/m]')

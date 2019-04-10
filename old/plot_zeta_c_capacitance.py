@@ -38,7 +38,7 @@ plt.ylabel('Zeta potential [mV]')
 plt.legend(title='Capacitances [$\mu$F/cm$^2$]')
 plt.text(-3, -40, 'p$K_{ads}$=%.2f\np$K_a$=%.2f' % (np.log10(K_ads), pKa))
 
-C1 = .5
+C1 = .2
 plt.figure(2)
 for C2 in C2_list:
     zeta_list = np.zeros(len(log10c_list))
