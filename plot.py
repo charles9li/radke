@@ -2,7 +2,16 @@ from line_marker import *
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-sns.set_context("paper")
+context = "talk"
+sns.set_context(context)
+
+##############
+# PARAMETERS #
+##############
+
+# plot all
+plot_all = False
+
 
 ##########
 # SCALES #
@@ -10,8 +19,9 @@ sns.set_context("paper")
 
 # Figure 1
 plot_scales_fig1 = False
-if plot_scales_fig1:
+if plot_scales_fig1 or plot_all:
     salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
+    plt.rcParams['figure.figsize'] = 9.5, 7
     plt.figure('Scales_fig1')
     plt.rcParams['xtick.top'] = True
     plt.rcParams['ytick.right'] = True
@@ -39,21 +49,59 @@ if plot_scales_fig1:
     plt.legend(frameon=False,
                ncol=2)
 
+# Figure 2
+plot_scales_fig2 = True
+if plot_scales_fig2 or plot_all:
+    plt.rcParams['figure.figsize'] = 8, 6.5
+    plt.figure('Scales_fig2')
+    plt.rcParams['xtick.top'] = True
+    plt.rcParams['ytick.right'] = True
+    df_exp = pd.read_csv(filepath_or_buffer='data/scales_fig2_data.csv',
+                         names=('pH', 'zeta'))
+    sns.scatterplot(x='pH', y='zeta',
+                    data=df_exp)
+    df_model = pd.read_csv(filepath_or_buffer='data_figures/scales_fig2_model.csv')
+    g = sns.lineplot(x='pH', y='zeta',
+                 data=df_model)
+    g.set(xlabel='pH',
+          ylabel='$\zeta$ [mV]')
+    plt.text(6, -60, 'conc = 1e-3')
+
 
 #########
 # OSMAN #
 #########
 
-plot_osman = True
-if plot_osman:
+plot_osman = False
+if plot_osman or plot_all:
+    plt.rcParams['figure.figsize'] = 8, 6.5
     plt.figure('Osman')
+    plt.rcParams['xtick.top'] = True
+    plt.rcParams['ytick.right'] = True
+    label_list = ['Na-Li', 'K-Li', 'Cs-Li']
+    i = 0
     for fig_index in [1, 2, 4]:
-        df = pd.read_csv(filepath_or_buffer='data_figures/osman_fig'+str(fig_index)+'_exp.csv')
+        label = label_list[i]
+        color = next(colors)
+        df_exp = pd.read_csv(filepath_or_buffer='data_figures/osman_fig'+str(fig_index)+'_exp.csv')
         sns.scatterplot(x='frac_A', y='frac_ads',
-                        data=df)
-
-    plt.xlim((0, 1))
-    plt.ylim((0, 1))
+                        data=df_exp,
+                        marker=next(markers),
+                        color=color,
+                        label=label)
+        df_model = pd.read_csv(filepath_or_buffer='data_figures/osman_fig'+str(fig_index)+'_model.csv')
+        plt.plot(df_model.get('frac_A'), df_model.get('frac_ads'),
+                 color=color,
+                 linestyle=next(lines),
+                 label=" ")
+        i += 1
+    plt.legend(frameon=False,
+               ncol=2)
+    overhang = 0.04
+    plt.xlim((0 - overhang, 1 + overhang))
+    plt.ylim((0 - overhang, 1 + overhang))
+    plt.xlabel('[M$^+$] / [Cl$^-$]')
+    plt.ylabel('$\Gamma_M$ / CEC')
 
 
 #################
