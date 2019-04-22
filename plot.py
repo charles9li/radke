@@ -50,7 +50,7 @@ if plot_scales_fig1 or plot_all:
                ncol=2)
 
 # Figure 2
-plot_scales_fig2 = True
+plot_scales_fig2 = False
 if plot_scales_fig2 or plot_all:
     plt.rcParams['figure.figsize'] = 8, 6.5
     plt.figure('Scales_fig2')
@@ -107,5 +107,21 @@ if plot_osman or plot_all:
 #################
 # ISRAELACHVILI #
 #################
+
+plot_israelachvili = True
+if plot_israelachvili or plot_all:
+    plt.figure('israelachvili')
+    c_list = ['1e-4', '1e-3', '1e-2', '1e-1']
+    for c in c_list:
+        df_exp = pd.read_csv(filepath_or_buffer='data/israelachvili_fig3_data_'+str(c)+'.csv',
+                         names=('D', 'F/R'))
+        sns.scatterplot(x='D', y='F/R',
+                        data=df_exp,
+                        marker=next(markers))
+        df_model = pd.read_csv(filepath_or_buffer='data_figures/israelachvili_'+str(c)+'_model.csv')
+        sns.lineplot(x='D', y='F/R',
+                     data=df_model)
+    plt.yscale('log')
+
 
 plt.show()
