@@ -1,6 +1,7 @@
 from radii import *
-from scipy.constants import epsilon_0
+from scipy.constants import epsilon_0, k
 from solver import Solution_1plate
+from solvers import *
 import numpy as np
 import pandas as pd
 
@@ -166,9 +167,39 @@ if data_osman or data_all:
 # ISRAELACHVILI #
 #################
 
-data_israelachvili = False
+def compute_kappa(c, pH=5.8, T=298, epsilon=79):
+    rho = 1000*N_A*(c+10**-pH)
+    return np.sqrt(2*rho*e**2/(epsilon*epsilon_0*k*T))
+
+data_israelachvili = True
 if data_israelachvili or data_all:
+    pH = 5.8
     c_list = ['1e-4', '1e-3', '1e-2', '1e-1']
     for c in c_list:
-        df = pd.read_csv(filepath_or_buffer='data/israelachvili_fig3_data_'+str(c)+'.csv',
+        df_exp = pd.read_csv(filepath_or_buffer='data/israelachvili_fig3_data_'+str(c)+'.csv',
                          names=('D', 'F/R'))
+        D_list = df_exp.get('D')
+        D_list = np.linspace(D_list[0], D_list[len(D_list)-1], 50)*1e-9
+        FR_list = np.zeros(len(D_list))
+        i = 0
+        for D in D_list:
+            sol = solver_2plate_2cation_ads(float(c), 10**-pH,
+                                            K_K, 10**pKa, D,
+                                            C_1=C1_K, C_2=C2_K)
+            rho_c_interp = interp1d(sol.x, sol.cation_1, 'cubic')
+            rho_H_interp = interp1d(sol.x, sol.cation_2, 'cubic')
+            rho_Cl_interp = interp1d(sol.x, sol.anion, 'cubic')
+            rho_tot_m = rho_c_interp(D/2) + rho_H_interp(D/2) + rho_Cl_interp(D/2)
+            rho_tot_bulk = 2*N_A*1000*(float(c) + 10**-pH)
+
+            P = k*298*(rho_tot_m - rho_tot_bulk)
+            W = P/compute_kappa(float(c))
+            FR = 2*np.pi*W
+            W_H = -2.2e-20/(12*np.pi*D**2)
+            FR_H = 2*np.pi*W_H
+            FR_list[i] = FR + FR_H
+            i += 1
+        df_model = pd.DataFrame({'D': D_list*1e9,
+                                 'F/R': FR_list*1e6})
+        df_model.to_csv(path_or_buf='data_figures/israelachvili_'+str(c)+'_model.csv',
+                        index=False)
