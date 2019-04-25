@@ -11,7 +11,7 @@ import pandas as pd
 ##############
 
 # K_ads
-K_Li = 10**0.7
+K_Li = 10**0.3
 K_Na = K_Li*2.5
 K_K = 10**2.8
 K_Cs = 10**3
@@ -51,7 +51,7 @@ data_all = False
 ##########
 
 # Figure 1
-data_scales_fig1 = False
+data_scales_fig1 = True
 if data_scales_fig1 or data_all:
     salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
     i = 0
@@ -84,7 +84,7 @@ if data_scales_fig1 or data_all:
         i += 1
 
 # Figure 2
-data_scales_fig2 = True
+data_scales_fig2 = False
 if data_scales_fig2 or data_all:
     pH_list = np.linspace(4, 10, 50)
     zeta_list = np.zeros(len(pH_list))
@@ -132,7 +132,7 @@ if data_osman or data_all:
                       index=False)
 
         frac_A_list = np.linspace(0.0001, 0.1, 20)
-        frac_A_list = np.append(frac_A_list, np.linspace(0.11, 0.99, 20))
+        frac_A_list = np.append(frac_A_list, np.linspace(0.11, 0.99, 15))
         frac_ads_list = np.zeros(len(frac_A_list))
         j = 0
         for frac_A in frac_A_list:
@@ -171,7 +171,7 @@ def compute_kappa(c, pH=5.8, T=298, epsilon=79):
     rho = 1000*N_A*(c+10**-pH)
     return np.sqrt(2*rho*e**2/(epsilon*epsilon_0*k*T))
 
-data_israelachvili = True
+data_israelachvili = False
 if data_israelachvili or data_all:
     pH = 5.8
     c_list = ['1e-4', '1e-3', '1e-2', '1e-1']
@@ -203,3 +203,54 @@ if data_israelachvili or data_all:
                                  'F/R': FR_list*1e6})
         df_model.to_csv(path_or_buf='data_figures/israelachvili_'+str(c)+'_model.csv',
                         index=False)
+
+
+#########
+# SIGMA #
+#########
+
+data_sigma_beta_conc = False
+if data_sigma_beta_conc:
+    pH = 5.8
+    c_list = np.logspace(-5, -1, 50)
+    sigma_beta_frac_list = np.zeros(len(c_list))
+    i = 0
+    for c in c_list:
+        c_list1 = np.array([c+10**-pH, c, 10**-pH])
+        K_list = np.array([K_Li, 10**pKa])
+        z_list = np.array([-1, 1, 1])
+        v_list = np.array([False, True, True])
+        sol = Solution_1plate(c_list1, K_list, z_list, v_list,
+                              pH_effect=False, C_1=C1_Li, C_2=C2_Li)
+        sol.solver_sigma()
+        sigma_beta_frac_list[i] = np.sum(sol.sigma_beta_list)/-sol.sigma_0
+        i += 1
+    df = pd.DataFrame({'c': c_list,
+                       'beta_frac': sigma_beta_frac_list})
+    df.to_csv(path_or_buf='data_figures/sigma_beta_conc.csv',
+              index=False)
+
+#
+data_sigma_beta_H = True
+if data_sigma_beta_H:
+    pH = 5.8
+    c_list = np.logspace(-5, -1, 50)
+    sigma_beta_frac_M_list = np.zeros(len(c_list))
+    sigma_beta_frac_H_list = np.zeros(len(c_list))
+    i = 0
+    for c in c_list:
+        c_list1 = np.array([c+10**-pH, c, 10**-pH])
+        K_list = np.array([K_Li, 10**pKa])
+        z_list = np.array([-1, 1, 1])
+        v_list = np.array([False, True, True])
+        sol = Solution_1plate(c_list1, K_list, z_list, v_list,
+                              pH_effect=False, C_1=C1_Li, C_2=C2_Li)
+        sol.solver_sigma()
+        sigma_beta_frac_M_list[i] = sol.sigma_beta_list[0]/-sol.sigma_0
+        sigma_beta_frac_H_list[i] = sol.sigma_beta_list[-1]/-sol.sigma_0
+        i += 1
+    df = pd.DataFrame({'c': c_list,
+                       'beta_frac_M': sigma_beta_frac_M_list,
+                       'beta_frac_H': sigma_beta_frac_H_list})
+    df.to_csv(path_or_buf='data_figures/sigma_beta_conc_H.csv',
+              index=False)
