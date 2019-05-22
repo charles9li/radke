@@ -25,6 +25,7 @@ class Solution_1plate:
         self.psi_0 = None
         self.psi_beta = None
         self.psi_d = None
+        self.SM_list = None
         if pH_effect:
             self.c_list = np.append(self.c_list, 10**-pH)
             self.K_list = np.append(self.K_list, 10**pKa)
@@ -236,12 +237,12 @@ class Solution_1plate:
         h_default = 1e-9
 
         # Solve ODE
-        while psi[-1] < -1e-8:
+        while psi[-1] < -1e-6:
             h = h_default
             y_next_2h = y_next(fun, x[-1], psi[-1], 2*h)
             y_next_h1 = y_next(fun, x[-1], psi[-1], h)
             y_next_h2 = y_next(fun, x[-1]+h, y_next_h1, h)
-            while abs(y_next_2h - y_next_h2) > 1e-10:
+            while abs(y_next_2h - y_next_h2) > 1e-8:
                 h = h/2
                 y_next_2h = y_next_h1
                 y_next_h1 = y_next(fun, x[-1], psi[-1], h)
