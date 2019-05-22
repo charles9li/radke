@@ -51,7 +51,7 @@ data_all = False
 ##########
 
 # Figure 1
-data_scales_fig1 = True
+data_scales_fig1 = False
 if data_scales_fig1 or data_all:
     salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
     i = 0
@@ -113,6 +113,7 @@ data_osman = False
 if data_osman or data_all:
     cCl_list = [0.67976, 0.6435, 0.66163]
     Gamma_Li0_list = [459.74, 468.8737, 608.0727]
+    # Gamma_Li0_list = [459.74, 468.8737, 465]
     CA0_list = [0.64, 0.62, 0.67]
     K_list_osman = [K_Na, K_K, K_Cs]
     C1_list_osman = [C1_Na, C1_K, C1_Cs]
@@ -205,15 +206,53 @@ if data_israelachvili or data_all:
                         index=False)
 
 
+#############
+# DONALDSON #
+#############
+
+data_donaldson = False
+if data_donaldson:
+    c_list = [1, 5, 10]
+    for pH in [3, 10]:
+        for c in c_list:
+            df_exp = pd.read_csv(filepath_or_buffer='data/donaldson_data_pH'+str(pH)+'_'+str(c)+'mM.csv',
+                                 names=('D', 'F/R'))
+            D_list = df_exp.get('D')
+            D_list = np.linspace(1, max(D_list))*1e-9
+            FR_list = np.zeros(len(D_list))
+            i = 0
+            for D in D_list:
+                sol = solver_2plate_2cation_ads(c*1e-3, 10**-pH,
+                                                K_Na, 10**pKa, D,
+                                                C_1=C1_Na, C_2=C2_Na)
+                rho_c_interp = interp1d(sol.x, sol.cation_1, 'cubic')
+                rho_H_interp = interp1d(sol.x, sol.cation_2, 'cubic')
+                rho_Cl_interp = interp1d(sol.x, sol.anion, 'cubic')
+                rho_tot_m = rho_c_interp(D/2) + rho_H_interp(D/2) + rho_Cl_interp(D/2)
+                rho_tot_bulk = 2*N_A*1000*(float(c*1e-3) + 10**-pH)
+
+                P = k*298*(rho_tot_m - rho_tot_bulk)
+                W = P/compute_kappa(float(c*1e-3))
+                FR = 2*np.pi*W
+                W_H = -2.2e-20/(12*np.pi*D**2)
+                FR_H = 2*np.pi*W_H
+                FR_list[i] = FR + FR_H
+                i += 1
+            df_model = pd.DataFrame({'D': D_list*1e9,
+                                     'F/R': FR_list*1e3})
+            df_model.to_csv(path_or_buf='data_figures/donaldson_pH'+str(pH)+'_'+str(c)+'mM_model.csv',
+                            index=False)
+
+
 #########
 # SIGMA #
 #########
 
-data_sigma_beta_conc = False
-if data_sigma_beta_conc:
+data_sigma_d_conc = False
+if data_sigma_d_conc:
     pH = 5.8
     c_list = np.logspace(-5, -1, 50)
-    sigma_beta_frac_list = np.zeros(len(c_list))
+    sigma_d_frac_list = np.zeros(len(c_list))
     i = 0
     for c in c_list:
         c_list1 = np.array([c+10**-pH, c, 10**-pH])
@@ -223,15 +262,15 @@ if data_sigma_beta_conc:
         sol = Solution_1plate(c_list1, K_list, z_list, v_list,
                               pH_effect=False, C_1=C1_Li, C_2=C2_Li)
         sol.solver_sigma()
-        sigma_beta_frac_list[i] = np.sum(sol.sigma_beta_list)/-sol.sigma_0
+        sigma_d_frac_list[i] = np.sum(sol.sigma_d)/-sol.sigma_0
         i += 1
     df = pd.DataFrame({'c': c_list,
-                       'beta_frac': sigma_beta_frac_list})
-    df.to_csv(path_or_buf='data_figures/sigma_beta_conc.csv',
+                       'beta_frac': sigma_d_frac_list})
+    df.to_csv(path_or_buf='data_figures/sigma_d_conc.csv',
               index=False)
 
 #
-data_sigma_beta_H = True
+data_sigma_beta_H = False
 if data_sigma_beta_H:
     pH = 5.8
     c_list = np.logspace(-5, -1, 50)
@@ -254,3 +293,33 @@ if data_sigma_beta_H:
                        'beta_frac_H': sigma_beta_frac_H_list})
     df.to_csv(path_or_buf='data_figures/sigma_beta_conc_H.csv',
               index=False)
+
+data_grahame = True
+if data_grahame:
+    salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
+    i = 0
+    for salt in salts:
+        K_ads = K_ads_list[i]
+        C1 = C1_list[i]
+        C2 = C2_list[i]
+        c_list = np.logspace(-5, -1, 25)
+        sigma_d_list = np.zeros(len(c_list))
+        sigma_d_grahame_list = np.zeros(len(c_list))
+        j = 0
+        for c in c_list:
+            c_list1 = np.array([c+10**-pH, c, 10**-pH])
+            K_list = np.array([K_ads, 10**pKa])
+            z_list = np.array([-1, 1, 1])
+            v_list = np.array([False, True, True])
+            sol = Solution_1plate(c_list1, K_list, z_list, v_list,
+                                  pH_effect=False, C_1=C1, C_2=C2)
+            sol.solver_sigma()
+            sigma_d_list[j] = sol.sigma_d
+            sigma_d_grahame_list[j] = -0.117*np.sinh(sol.psi_d*1000/51.4)*np.sqrt(c)
+            j += 1
+        df = pd.DataFrame({'c': c_list,
+                           'sigma_d': sigma_d_list,
+                           'sigma_d_grahame': sigma_d_grahame_list})
+        df.to_csv(path_or_buf='data_figures/grahame_'+salt+'.csv',
+                  index=False)
+        i += 1

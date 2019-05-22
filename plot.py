@@ -119,9 +119,9 @@ if plot_scales_fig2 or plot_all:
             'conc=10$^{-3}$ M\n' + \
             'p$K_M$=%.2f\n' + \
             'p$K_a$=%.2f\n' + \
-            '$C_1$=%i\n' + \
-            '$C_2$=%i'
-    plt.text(7, -70, label % (np.log10(K_K), pKa, C1_K*100, C2_K*100))
+            '$C_1$=%i $\mu$F/m$^2$\n' + \
+            '$C_2$=%i $\mu$F/m$^2$\n'
+    plt.text(7, -75, label % (np.log10(K_K), pKa, C1_K*100, C2_K*100))
     plt.tight_layout()
 
 
@@ -166,7 +166,7 @@ if plot_osman or plot_all:
 # ISRAELACHVILI #
 #################
 
-plot_israelachvili = True
+plot_israelachvili = False
 if plot_israelachvili or plot_all:
     plt.figure('israelachvili')
     c_list = ['1e-4', '1e-3', '1e-2', '1e-1']
@@ -194,12 +194,44 @@ if plot_israelachvili or plot_all:
     plt.tight_layout()
 
 
+#############
+# DONALDSON #
+#############
+
+plot_donaldson = False
+if plot_donaldson or plot_all:
+    for pH in [3, 10]:
+        plt.figure('donaldson_pH' + str(pH))
+        c_list = [1, 5, 10]
+        i = 0
+        for c in c_list:
+            df_exp = pd.read_csv(filepath_or_buffer='data/donaldson_data_pH'+str(pH)+'_'+str(c)+'mM.csv',
+                                 names=('D', 'F/R'))
+            sns.scatterplot(x='D', y='F/R',
+                            data=df_exp,
+                            marker=next(markers),
+                            color='C' + str(i),
+                            label=c)
+            df_model = pd.read_csv(filepath_or_buffer='data_figures/donaldson_pH'+str(pH)+'_'+str(c)+'mM_model.csv')
+            plt.plot(df_model.get('D'), df_model.get('F/R'),
+                     linestyle=next(lines),
+                     color='C' + str(i),
+                     label='_nolegend_')
+            i += 1
+        plt.legend(frameon=False,
+                   title='conc [mM]')
+        plt.xlabel('D [nm]')
+        plt.ylabel('F/R [mN/m]')
+        plt.tight_layout()
+        plt.yscale('log')
+
+
 ######################
 # POTENTIAL PROFILES #
 ######################
 
 plot_LiCl_conc = False
-if plot_LiCl_conc:
+if plot_LiCl_conc or plot_all:
     pH = 5.8
     sns.set_palette('viridis')
     plt.figure('LiCl potential profile vary concentration')
@@ -230,7 +262,6 @@ if plot_LiCl_conc:
                frameon=False)
     plt.xlim(((-2*R_Li_hyd-R_Li)*1e9*1.2, 1))
     plt.tight_layout()
-
 
 # LiCl, vary K
 plot_LiCl_K = False
@@ -270,32 +301,63 @@ if plot_LiCl_K:
 # SIGMA #
 #########
 
-plot_sigma_beta_conc = False
-if plot_sigma_beta_conc:
-    plt.figure('sigma_beta_conc')
-    df = pd.read_csv(filepath_or_buffer='data_figures/sigma_beta_conc.csv')
+plot_sigma_d_conc = False
+if plot_sigma_d_conc:
+    plt.figure('sigma_d_conc')
+    df = pd.read_csv(filepath_or_buffer='data_figures/sigma_d_conc.csv')
     sns.lineplot(x='c', y='beta_frac',
                  data=df)
     plt.tight_layout()
     plt.xscale('log')
     plt.xlabel('c [mol dm$^{-3}$]')
-    plt.ylabel('$\sigma_{beta}$ / |$\sigma_0$|')
+    plt.ylabel('$\sigma_d$ / |$\sigma_0$|')
+    plt.text(3e-5, 0.04, 'LiCl\npH=5.8')
 
 plot_sigma_beta_conc_H = False
 if plot_sigma_beta_conc_H:
     plt.figure('sigma_beta_conc_H')
     df = pd.read_csv(filepath_or_buffer='data_figures/sigma_beta_conc_H.csv')
-    sns.lineplot(x='c', y='beta_frac_M',
-                 data=df,
-                 label='M')
     sns.lineplot(x='c', y='beta_frac_H',
                  data=df,
                  label='H')
+    ax = sns.lineplot(x='c', y='beta_frac_M',
+                 data=df,
+                 label='Li')
+    ax.lines[1].set_linestyle("--")
     plt.tight_layout()
     plt.xscale('log')
     plt.xlabel('c [mol dm$^{-3}$]')
-    plt.ylabel('$\sigma_{beta}$ / |$\sigma_0$|')
-    plt.legend()
+    plt.ylabel('$\sigma_{β}$ / |$\sigma_0$|')
+    plt.text(1e-3, 0.5, 'LiCl\npH=5.8')
+    plt.legend(frameon=False)
+
+plot_grahame = True
+if plot_grahame or plot_all:
+    plt.figure('grahame')
+    salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
+    i = 0
+    for salt in salts:
+        df = pd.read_csv(filepath_or_buffer='data_figures/grahame_'+salt+'.csv')
+        plt.plot(df.get('c'), df.get('sigma_d')/0.32,
+                 color='C'+str(i),
+                 label=salt)
+        i += 1
+
+    i = 0
+    for salt in salts:
+        df = pd.read_csv(filepath_or_buffer='data_figures/grahame_'+salt+'.csv')
+        plt.plot(df.get('c'), df.get('sigma_d_grahame')/0.32,
+                 color='C'+str(i),
+                 linestyle='--',
+                 label='(Grahame eqn) (model)')
+        i += 1
+
+    plt.legend(frameon=False,
+               ncol=2)
+    plt.xscale('log')
+    plt.xlabel('c [mol dm$^{-3}$]')
+    plt.ylabel('$\sigma_d$ / |$\sigma_0$|')
+    plt.tight_layout()
 
 
 
