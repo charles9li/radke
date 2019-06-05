@@ -27,7 +27,7 @@ class Solution:
             self.v_list = np.append(self.v_list, True)
 
     def solve_equations(self, c_list_init=None, K_list_init=None,
-                        C1_init=None, C2_init=None, guess=None):
+                        C1_init=None, C2_init=None, D_init=None, guess=None):
         """Solves equations to find potential profiles and surface charge
         densities.
 
@@ -41,29 +41,64 @@ class Solution:
         self._create_K_list_init(K_list_init)
         self._create_C1_init(C1_init)
         self._create_C2_init(C2_init)
-        self._create_guess(guess)
+        self._create_D_init(D_init)
+
+        # Initialize guess
+        guess = self._create_guess(guess)
 
         # Run continuation for each parameter
-        self._parameter_continuation(c_list_init, K_list_init,
-                                     C1_init, C2_init, guess)
+        guess = self._continuation('c_list', self._log_mean, guess)
+        guess = self._continuation('K_list', self._log_mean, guess)
+        guess = self._continuation('C1', self._mean, guess)
+        guess = self._continuation('C2', self._mean, guess)
+        guess = self._continuation('D', self._mean, guess)
 
-    def _parameter_continuation(self, c_list_init, K_list_init,
-                                C1_init, C2_init, guess):
+    def _continuation(self, parameter_str, average, guess):
         while True:
             try:
-                guess_full = self._solver(self._c_list_curr, self._K_list_curr,
-                                          self._C1_curr, self._C2_curr, self.D)
-                guess_half_1 = self._solver(self._)
+                guess_full = self._solver(guess, *self._parameter_full(parameter_str))
+                guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str))
+                guess_half_2 = self._solver(guess, *self._parameter_full(parameter_str))
             except Warning:
-                try:
-                    pass
-                except Warning:
-                    pass
+                pass
 
-    def _concentration_continuation(self):
-        pass
+    def _parameter_full(self, parameter_str):
+        c_list = self._c_list_init
+        K_list = self._K_list_init
+        C1 = self._C1_init
+        C2 = self._C2_init
+        D = self._D_init
+        if parameter_str == 'c_list':
+            c_list = self._c_list_curr
+        elif parameter_str == 'K_list':
+            K_list = self._K_list_curr
+        elif parameter_str == 'C1':
+            C1 = self._C1_curr
+        elif parameter_str == 'C2':
+            C2 = self._C2_curr
+        elif parameter_str == 'D':
+            D = self._D_curr
+        return c_list, K_list, C1, C2, D
 
-    def _solver(self, c_list, K_list, C1, C2, D):
+    def _parameter_half(self, parameter_str, average):
+        c_list = self._c_list_init
+        K_list = self._K_list_init
+        C1 = self._C1_init
+        C2 = self._C2_init
+        D = self._D_init
+        if parameter_str == 'c_list':
+            c_list = average(c_list, self._c_list_curr)
+        elif parameter_str == 'K_list':
+            K_list = average(K_list, self._K_list_curr)
+        elif parameter_str == 'C1':
+            C1 = average(C1, self._C1_curr)
+        elif parameter_str == 'C2':
+            C2 = average(C2, self._C2_curr)
+        elif parameter_str == 'D':
+            D = average(D, self._D_curr)
+        return c_list, K_list, C1, C2, D
+
+    def _solver(self, guess, c_list, K_list, C1, C2, D):
         pass
 
     #
@@ -98,8 +133,15 @@ class Solution:
             self._C2_init = C2_init
         self._C2_curr = self.C2
 
+    def _create_D_init(self, D_init):
+        if D_init is None:
+            self._D_init = 10e-9
+        else:
+            self._D_init = D_init
+        self._D_curr = self.D
+
     def _create_guess(self, guess):
-        self._guess = guess
+        return guess
 
     #
     # Continuation utility
