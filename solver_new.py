@@ -59,8 +59,17 @@ class Solution:
                 guess_full = self._solver(guess, *self._parameter_full(parameter_str))
                 guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str))
                 guess_half_2 = self._solver(guess, *self._parameter_full(parameter_str))
+
+                if self._is_guess_converged(guess_full, guess_half_2):
+                    return guess_full
+                else:
+                    warnings.warn("{} continuation. Guess did not converge".format(parameter_str), Warning)
+
             except Warning:
-                pass
+                try:
+                    self._parameter_target(parameter_str)
+                except Warning:
+                    pass
 
     def _parameter_full(self, parameter_str):
         c_list = self._c_list_init
@@ -98,6 +107,18 @@ class Solution:
             D = average(D, self._D_curr)
         return c_list, K_list, C1, C2, D
 
+    def _parameter_target(self, parameter_str):
+        if parameter_str == 'c_list':
+            self._c_list_curr = self.c_list
+        elif parameter_str == 'K_list':
+            self._K_list_curr = self.K_list
+        elif parameter_str == 'C1':
+            self._C1_curr = self.C1
+        elif parameter_str == 'C2':
+            self._C2_curr = self.C2
+        elif parameter_str == 'D':
+            self._D_curr = self.D
+
     def _solver(self, guess, c_list, K_list, C1, C2, D):
         pass
 
@@ -108,6 +129,7 @@ class Solution:
     def _create_c_list_init(self, c_list_init):
         if c_list_init is None:
             self._c_list_init = np.array([1e-3] * len(self.c_list[self.v_list]))
+            self._c_list_init = np.append([np.sum(self._c_list_curr)], self._c_list_init)
         else:
             self._c_list_init = c_list_init
         self._c_list_curr = self.c_list[self.v_list]
@@ -161,6 +183,10 @@ class Solution:
     @staticmethod
     def _mean(x, y):
         return (x + y) / 2
+
+    @staticmethod
+    def _is_guess_converged(guess_1, guess_2):
+        return False
 
 
 class Solution1Plate(Solution):
