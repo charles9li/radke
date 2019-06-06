@@ -63,13 +63,22 @@ class Solution:
                 if self._is_guess_converged(guess_full, guess_half_2):
                     return guess_full
                 else:
+                    self._parameter_change_curr(parameter_str, average)
                     warnings.warn("{} continuation. Guess did not converge".format(parameter_str), Warning)
 
             except Warning:
                 try:
+                    guess_full = self._solver(guess, *self._parameter_full(parameter_str))
+                    guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str))
+                    guess_half_2 = self._solver(guess, *self._parameter_full(parameter_str))
+
+                    if not self._is_guess_converged(guess_full, guess_half_2):
+                        warnings.warn("{} continuation. Guess did not converge".format(parameter_str), Warning)
+
+                    self._parameter_change_init(parameter_str)
                     self._parameter_target(parameter_str)
                 except Warning:
-                    pass
+                    self._parameter_change_curr(parameter_str, average)
 
     def _parameter_full(self, parameter_str):
         c_list = self._c_list_init
@@ -97,6 +106,7 @@ class Solution:
         D = self._D_init
         if parameter_str == 'c_list':
             c_list = average(c_list, self._c_list_curr)
+            c_list[0] = np.sum(c_list[1:])
         elif parameter_str == 'K_list':
             K_list = average(K_list, self._K_list_curr)
         elif parameter_str == 'C1':
@@ -118,6 +128,31 @@ class Solution:
             self._C2_curr = self.C2
         elif parameter_str == 'D':
             self._D_curr = self.D
+
+    def _parameter_change_curr(self, parameter_str, average):
+        if parameter_str == 'c_list':
+            self._c_list_curr = average(self._c_list_init, self._c_list_curr)
+            self._c_list_curr[0] = np.sum(self._c_list_curr[1:])
+        elif parameter_str == 'K_list':
+            self._K_list_curr = average(self._K_list_init, self._K_list_curr)
+        elif parameter_str == 'C1':
+            self._C1_curr = average(self._C1_init, self._C1_curr)
+        elif parameter_str == 'C2':
+            self._C2_curr = average(self._C2_init, self._C2_curr)
+        elif parameter_str == 'D':
+            self._D_curr = average(self._D_init, self._D_curr)
+
+    def _parameter_change_init(self, parameter_str):
+        if parameter_str == 'c_list':
+            self._c_list_init = self._c_list_curr
+        elif parameter_str == 'K_list':
+            self._K_list_init = self._K_list_curr
+        elif parameter_str == 'C1':
+            self._C1_init = self._C1_curr
+        elif parameter_str == 'C2':
+            self._C2_init = self._C2_curr
+        elif parameter_str == 'D':
+            self._D_init = self._D_curr
 
     def _solver(self, guess, c_list, K_list, C1, C2, D):
         pass
