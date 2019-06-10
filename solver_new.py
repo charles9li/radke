@@ -66,6 +66,7 @@ class Solution:
                 guess_half_2 = self._solver(guess, *self._parameter_full(parameter_str))
 
                 if self._is_guess_converged(guess_full, guess_half_2):
+                    self._parameter_finish_init(parameter_str)
                     return guess_full
                 else:
                     self._parameter_change_curr(parameter_str, average)
@@ -84,6 +85,7 @@ class Solution:
                     self._parameter_target(parameter_str)
                 except Warning:
                     self._parameter_change_curr(parameter_str, average)
+                    print(parameter_str + str(self._c_list_init))
 
     def _parameter_full(self, parameter_str):
         c_list = self._c_list_init
@@ -159,6 +161,18 @@ class Solution:
         elif parameter_str == 'D':
             self._D_init = self._D_curr
 
+    def _parameter_finish_init(self, parameter_str):
+        if parameter_str == 'c_list':
+            self._c_list_init = self.c_list
+        elif parameter_str == 'K_list':
+            self._K_list_init = self.K_list
+        elif parameter_str == 'C1':
+            self._C1_init = self.C1
+        elif parameter_str == 'C2':
+            self._C2_init = self.C2
+        elif parameter_str == 'D':
+            self._D_init = self.D
+
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
         pass
 
@@ -169,10 +183,10 @@ class Solution:
     def _create_c_list_init(self, c_list_init):
         if c_list_init is None:
             self._c_list_init = np.array([1e-3] * len(self.c_list[self.v_list]))
-            self._c_list_init = np.append([np.sum(self._c_list_init)], self._c_list_init)
+            self._c_list_init = np.append(np.sum(self._c_list_init), self._c_list_init)
         else:
             self._c_list_init = c_list_init
-        self._c_list_curr = self.c_list[self.v_list]
+        self._c_list_curr = self.c_list
 
     def _create_K_list_init(self, K_list_init):
         if K_list_init is None:
@@ -281,7 +295,16 @@ class Solution1Plate(Solution):
 
     def _create_guess(self, guess):
         if guess is None:
-            return np.array([-0.10727440871184632, 1.9076140644838958e18])
+            num_cat = len(self.c_list) - 1
+            psi_d_poly = np.poly1d([3.25590388e+09, -1.08057231e+08,
+                                    1.41687447e+06, -9.49887189e+03,
+                                    3.72769964e+01, -1.36321197e-01])
+            SM_poly = np.poly1d([-1.52703963e+34,  6.65368881e+32,
+                                 -1.21054552e+31,  1.19304587e+29,
+                                 -6.90913117e+26,  2.38311837e+24,
+                                 -4.72002436e+21,  4.82749852e+18])
+            guess = np.array([SM_poly(num_cat * 1e-3)] * num_cat)
+            guess = np.append(psi_d_poly(num_cat * 1e-3), guess)
         return guess
 
     @staticmethod
@@ -297,11 +320,3 @@ class Solution1Plate(Solution):
 
 class Solution2Plate(Solution):
     pass
-
-
-c_list = [1e-3, 1e-3]
-K_list = [100]
-z_list = [-1, 1]
-v_list = [False, True]
-sol = Solution1Plate(c_list, K_list, z_list, v_list, 10e-9, pH_effect=False)
-sol.solve_equations()
