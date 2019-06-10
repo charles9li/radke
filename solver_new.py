@@ -1,6 +1,6 @@
 import numpy as np
 import warnings
-from scipy.constants import e, k, epsilon_0
+from scipy.constants import e, k, epsilon_0, R
 from scipy.optimize import root, minimize
 from scipy.integrate import odeint, simps, solve_bvp
 np.seterr(over='warn')
@@ -9,7 +9,9 @@ warnings.filterwarnings('error')
 
 class Solution:
 
-    def __init__(self, c_list, K_list, z_list, v_list, D, pH=5.8, pKa=5.3, pH_effect=True, C1=10, C2=2):
+    L = 2e18
+
+    def __init__(self, c_list, K_list, z_list, v_list, D, pH=5.8, pKa=5.3, pH_effect=True, C1=0.5, C2=0.5, T=298):
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
         self.z_list = np.array(z_list)
@@ -20,6 +22,7 @@ class Solution:
         self.pH_effect = pH_effect
         self.C1 = C1
         self.C2 = C2
+        self.T = T
         if pH_effect:
             self.c_list = np.append(self.c_list, 10**-pH)
             self.K_list = np.append(self.K_list, 10**pKa)
@@ -53,11 +56,13 @@ class Solution:
         guess = self._continuation('C2', self._mean, guess)
         guess = self._continuation('D', self._mean, guess)
 
+        self._solver(guess, self.c_list, self.K_list, self.C1, self.C2, self.D, get_values=True)
+
     def _continuation(self, parameter_str, average, guess):
         while True:
             try:
                 guess_full = self._solver(guess, *self._parameter_full(parameter_str))
-                guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str))
+                guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str, average))
                 guess_half_2 = self._solver(guess, *self._parameter_full(parameter_str))
 
                 if self._is_guess_converged(guess_full, guess_half_2):
@@ -69,7 +74,7 @@ class Solution:
             except Warning:
                 try:
                     guess_full = self._solver(guess, *self._parameter_full(parameter_str))
-                    guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str))
+                    guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str, average))
                     guess_half_2 = self._solver(guess, *self._parameter_full(parameter_str))
 
                     if not self._is_guess_converged(guess_full, guess_half_2):
@@ -154,7 +159,7 @@ class Solution:
         elif parameter_str == 'D':
             self._D_init = self._D_curr
 
-    def _solver(self, guess, c_list, K_list, C1, C2, D):
+    def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
         pass
 
     #
@@ -164,7 +169,7 @@ class Solution:
     def _create_c_list_init(self, c_list_init):
         if c_list_init is None:
             self._c_list_init = np.array([1e-3] * len(self.c_list[self.v_list]))
-            self._c_list_init = np.append([np.sum(self._c_list_curr)], self._c_list_init)
+            self._c_list_init = np.append([np.sum(self._c_list_init)], self._c_list_init)
         else:
             self._c_list_init = c_list_init
         self._c_list_curr = self.c_list[self.v_list]
@@ -201,13 +206,6 @@ class Solution:
         return guess
 
     #
-    # Continuation utility
-    #
-
-    def _create_argument(self):
-        pass
-
-    #
     # Utility methods
     #
 
@@ -225,8 +223,85 @@ class Solution:
 
 
 class Solution1Plate(Solution):
-    pass
+
+    def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
+        def equations(guess):
+
+            psi_d, SM_list = guess[0], guess[1:]
+
+            # Compute sigma_d
+            c_bulk_sum = 1000*np.sum(c_list)
+            c_d_sum = 1000*np.sum(c_list*np.exp(-self.z_list*e*psi_d/(k*self.T)))
+            sigma_d = -psi_d/abs(psi_d)*np.sqrt(2*R*self.T*79*epsilon_0*(c_d_sum - c_bulk_sum))
+
+            # Compute psi_beta and number of free sites S
+            psi_beta = psi_d - sigma_d/C2
+            S = self.L - np.sum(SM_list)
+
+            # Create adsorption equations
+            if self.pH_effect:
+                sigma_0 = -e*(self.L-SM_list[-1])
+                psi_0 = psi_beta + sigma_0/C1
+                SM_objective = (K_list[:-1] - SM_list[:-1]/(S*(c_list[:-1]*np.exp(-self.z_list[:-1]*e*psi_beta/(k*self.T)))[self.v_list[:-1]]))/K_list[:-1]
+                SH_objective = (K_list[-1] - SM_list[-1]/(S*(c_list[-1]*np.exp(-self.z_list[-1]*e*psi_0/(k*self.T)))))/K_list[-1]
+                SM_objective = np.append(SM_objective, SH_objective)
+            else:
+                sigma_0 = -e*self.L
+                psi_0 = psi_beta + sigma_0/C1
+                SM_objective = (K_list - SM_list/(S*(c_list*np.exp(-self.z_list*e*psi_beta/(k*self.T)))[self.v_list]))/K_list
+
+            # Create total charge equation
+            if self.pH_effect:
+                sigma_objective = (sigma_0 + sigma_d + e*np.sum((self.z_list[self.v_list]*SM_list)[:-1]))/sigma_0
+            else:
+                sigma_objective = (sigma_0 + sigma_d + e*np.sum(self.z_list[self.v_list]*SM_list))/sigma_0
+
+            # Create solution attributes or return equations
+            if get_values:
+                self.SM_list = SM_list
+                self.psi_0 = psi_0
+                self.psi_beta = psi_beta
+                self.psi_d = psi_d
+                self.sigma_0 = sigma_0
+                self.sigma_beta_list = e*SM_list
+                self.sigma_d = sigma_d
+                self.frac_list = self.SM_list/2e18
+                if self.pH_effect:
+                    self.SM_list = SM_list[:-1]
+                    self.SH = SM_list[-1]
+                    self.sigma_beta_list = e*SM_list[:-1]
+            else:
+                return np.append(SM_objective, sigma_objective)
+
+        if get_values:
+            equations(guess)
+        else:
+            solution = root(equations, guess, method='lm', tol=1e-10)
+            return solution.x
+
+    def _create_guess(self, guess):
+        if guess is None:
+            return np.array([-0.10727440871184632, 1.9076140644838958e18])
+        return guess
+
+    @staticmethod
+    def _is_guess_converged(guess_1, guess_2):
+        i = 0
+        for i in range(len(guess_1)):
+            item_1 = guess_1[i]
+            item_2 = guess_2[i]
+            if abs(item_1 - item_2) > 1e-3:
+                return False
+        return True
 
 
 class Solution2Plate(Solution):
     pass
+
+
+c_list = [1e-3, 1e-3]
+K_list = [100]
+z_list = [-1, 1]
+v_list = [False, True]
+sol = Solution1Plate(c_list, K_list, z_list, v_list, 10e-9, pH_effect=False)
+sol.solve_equations()
