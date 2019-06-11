@@ -50,25 +50,55 @@ class Solution:
         guess = self._create_guess(guess)
 
         # Run continuation for each parameter
-        guess = self._continuation('c_list', guess, 0.01, log=True)
-        guess = self._continuation('K_list', guess, 0.01, log=True)
-        guess = self._continuation('C1', guess, 0.01, log=False)
-        guess = self._continuation('C2', guess, 0.01, log=False)
-        guess = self._continuation('D', guess, 1e-9, log=False)
+        guess = self._continuation('c_list', guess, 0.01, True)
+        guess = self._continuation('K_list', guess, 0.01, True)
+        guess = self._continuation('C1', guess, 0.01, False)
+        guess = self._continuation('C2', guess, 0.01, False)
+        guess = self._continuation('D', guess, 1e-9, False)
 
         self._solver(guess, self.c_list, self.K_list, self.C1, self.C2, self.D, get_values=True)
 
-    def _continuation(self, parameter_str, guess, step_size, log=False):
+    def _continuation(self, parameter_str, guess, step_size, log):
+        guess_list = [guess]
         while not self._is_parameter_done(parameter_str):
-            pass
+            self._increment_parameter(parameter_str, step_size, log)
+            guess_next = self._guess_next(guess_list)
+            guess = self._solver_init(guess_next)
+            guess_list = self._add_guess(guess_list, guess)
         return guess
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
         pass
 
+    def _solver_init(self, guess):
+        return self._solver(guess, self._c_list_init, self._K_list_init,
+                            self._C1_init, self._C2_init, self._D_init)
+
     #
     # Used for continuation
     #
+
+    @staticmethod
+    def _add_guess(guess_list, guess):
+        if len(guess_list) < 3:
+            return np.append(guess, guess_list)
+        else:
+            guess_list[1:] = guess_list[0:2]
+            guess_list[0] = guess
+            return guess_list
+
+    def _guess_next(self, guess_list):
+        if len(guess_list) == 1:
+            return self._solver_init(guess_list[0])
+        elif len(guess_list) == 2:
+            return self._continuation_linear(guess_list)
+        return self._continuation_quadratic(guess_list)
+
+    def _continuation_linear(self, guess_list):
+        pass
+
+    def _continuation_quadratic(self, guess_list):
+        pass
 
     def _is_parameter_done(self, parameter_str):
         if parameter_str == 'c_list':
@@ -81,6 +111,10 @@ class Solution:
             return self._C2_init == self.C2
         elif parameter_str == 'D':
             return self._D_init == self.D
+
+    #
+    # Increments parameters
+    #
 
     def _increment_parameter(self, parameter_str, step_size, log=False):
         if parameter_str == 'c_list':
@@ -114,6 +148,23 @@ class Solution:
         init = self._K_list_init[self._K_list_index]
         if init == final:
             self._K_list_index += 1
+
+    @staticmethod
+    def _increment(init, final, step_size, log):
+        if init == final:
+            return init
+
+        sign = (final - init) / abs(final - init)
+
+        if log:
+            init = 10**(np.log10(init) + sign * step_size)
+        else:
+            init = init + sign * step_size
+
+        if sign * init > sign * final:
+            return final
+        else:
+            return init
 
     #
     # Initializes starting c and K values for continuation
@@ -154,27 +205,6 @@ class Solution:
 
     def _create_guess(self, guess):
         return guess
-
-    #
-    # Utility methods
-    #
-
-    @staticmethod
-    def _increment(init, final, step_size, log):
-        if init == final:
-            return init
-
-        sign = (final - init) / abs(final - init)
-
-        if log:
-            init = 10**(np.log10(init) + sign * step_size)
-        else:
-            init = init + sign * step_size
-
-        if sign * init > sign * final:
-            return final
-        else:
-            return init
 
 
 class Solution1Plate(Solution):
@@ -234,6 +264,24 @@ class Solution1Plate(Solution):
             solution = root(equations, guess, method='lm', tol=1e-10)
             return solution.x
 
+    def _continuation_linear(self, guess_list):
+        guess = np.zeros(len(guess_list[0]))
+        for i in range(len(guess)):
+            lin_reg = np.poly1d(np.polyfit([0, 1],
+                                           [guess_list[0][i], guess_list[1][i]],
+                                           1))
+            guess[i] = lin_reg(-1)
+        return guess
+
+    def _continuation_quadratic(self, guess_list):
+        guess = np.zeros(len(guess_list[0]))
+        for i in range(len(guess)):
+            quad_reg = np.poly1d(np.polyfit([0, 1, 2],
+                                 [guess_list[0][i], guess_list[1][i], guess_list[2][i]],
+                                 2))
+            guess[i] = quad_reg(-1)
+        return guess
+
     def _create_guess(self, guess):
         if guess is None:
             num_cat = len(self.c_list) - 1
@@ -249,16 +297,6 @@ class Solution1Plate(Solution):
             guess = self._solver(guess, self._c_list_init, self._K_list_init,
                                  self._C1_init, self._C2_init, self._D_init)
         return guess
-
-    @staticmethod
-    def _is_guess_converged(guess_1, guess_2):
-        i = 0
-        for i in range(len(guess_1)):
-            item_1 = guess_1[i]
-            item_2 = guess_2[i]
-            if abs(item_1 - item_2) > 1e-3:
-                return False
-        return True
 
 
 class Solution2Plate(Solution):
