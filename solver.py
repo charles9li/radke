@@ -1,10 +1,7 @@
 import numpy as np
-import warnings
 from scipy.constants import e, k, epsilon_0, R
-from scipy.optimize import root, minimize
+from scipy.optimize import root
 from scipy.integrate import odeint, simps, solve_bvp
-np.seterr(over='warn')
-warnings.filterwarnings('error')
 
 
 class Solution:
@@ -57,6 +54,7 @@ class Solution:
         guess = self._continuation('D', guess, 1e-9, False)
 
         self._solver(guess, self.c_list, self.K_list, self.C1, self.C2, self.D, get_values=True)
+        self.guess = guess
 
     def _continuation(self, parameter_str, guess, step_size, log):
         guess_list = [guess]
@@ -254,7 +252,7 @@ class Solution1Plate(Solution):
                 self.sigma_0 = sigma_0
                 self.sigma_beta_list = e*SM_list
                 self.sigma_d = sigma_d
-                self.frac_list = self.SM_list/2e18
+                self.frac_list = self.SM_list/self.L
                 if self.pH_effect:
                     self.SM_list = SM_list[:-1]
                     self.SH = SM_list[-1]
@@ -304,4 +302,6 @@ class Solution1Plate(Solution):
 
 
 class Solution2Plate(Solution):
-    pass
+
+    def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
+        pass
