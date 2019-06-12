@@ -52,8 +52,8 @@ class Solution:
         # Run continuation for each parameter
         guess = self._continuation('c_list', guess, 0.01, True)
         guess = self._continuation('K_list', guess, 0.01, True)
-        guess = self._continuation('C1', guess, 0.01, False)
-        guess = self._continuation('C2', guess, 0.01, False)
+        guess = self._continuation('C1', guess, 0.1, False)
+        guess = self._continuation('C2', guess, 0.1, False)
         guess = self._continuation('D', guess, 1e-9, False)
 
         self._solver(guess, self.c_list, self.K_list, self.C1, self.C2, self.D, get_values=True)
@@ -81,7 +81,7 @@ class Solution:
     @staticmethod
     def _add_guess(guess_list, guess):
         if len(guess_list) < 3:
-            return np.append(guess, guess_list)
+            return [guess, *guess_list]
         else:
             guess_list[1:] = guess_list[0:2]
             guess_list[0] = guess
@@ -101,16 +101,20 @@ class Solution:
         pass
 
     def _is_parameter_done(self, parameter_str):
+        return_bool = False
         if parameter_str == 'c_list':
-            return self._c_list_init == self.c_list
+            return_bool = all(self._c_list_init == self.c_list)
         elif parameter_str == 'K_list':
-            return self._K_list_init == self.K_list
+            return_bool = all(self._K_list_init == self.K_list)
         elif parameter_str == 'C1':
-            return self._C1_init == self.C1
+            return_bool = self._C1_init == self.C1
         elif parameter_str == 'C2':
-            return self._C2_init == self.C2
+            return_bool = self._C2_init == self.C2
         elif parameter_str == 'D':
-            return self._D_init == self.D
+            return_bool = self._D_init == self.D
+        if return_bool:
+            print(parameter_str + " success")
+        return return_bool
 
     #
     # Increments parameters
@@ -122,11 +126,11 @@ class Solution:
         elif parameter_str == 'K_list':
             self._increment_K(step_size, log)
         elif parameter_str == 'C1':
-            self._increment(self._C1_init, self.C1, step_size, log)
+            self._C1_init = self._increment(self._C1_init, self.C1, step_size, log)
         elif parameter_str == 'C2':
-            self._increment(self._C2_init, self.C2, step_size, log)
+            self._C2_init = self._increment(self._C2_init, self.C2, step_size, log)
         elif parameter_str == 'D':
-            self._increment(self._D_init, self.D, step_size, log)
+            self._D_init = self._increment(self._D_init, self.D, step_size, log)
 
     def _increment_c(self, step_size, log):
         init = self._c_list_init[self._c_list_index]
