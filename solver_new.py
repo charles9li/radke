@@ -9,9 +9,8 @@ warnings.filterwarnings('error')
 
 class Solution:
 
-    L = 2e18
-
-    def __init__(self, c_list, K_list, z_list, v_list, D, pH=5.8, pKa=5.3, pH_effect=True, C1=0.5, C2=0.5, T=298):
+    def __init__(self, c_list, K_list, z_list, v_list, D,
+                 pH=5.8, pKa=5.3, pH_effect=True, C1=0.5, C2=0.5, T=298, L=2e18):
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
         self.z_list = np.array(z_list)
@@ -23,6 +22,7 @@ class Solution:
         self.C1 = C1
         self.C2 = C2
         self.T = T
+        self.L = L
         if pH_effect:
             self.c_list = np.append(self.c_list, 10**-pH)
             self.K_list = np.append(self.K_list, 10**pKa)
@@ -50,131 +50,125 @@ class Solution:
         guess = self._create_guess(guess)
 
         # Run continuation for each parameter
-        guess = self._continuation('c_list', self._log_mean, guess)
-        guess = self._continuation('K_list', self._log_mean, guess)
-        guess = self._continuation('C1', self._mean, guess)
-        guess = self._continuation('C2', self._mean, guess)
-        guess = self._continuation('D', self._mean, guess)
+        guess = self._continuation('c_list', guess, 0.01, True)
+        guess = self._continuation('K_list', guess, 0.01, True)
+        guess = self._continuation('C1', guess, 0.1, False)
+        guess = self._continuation('C2', guess, 0.1, False)
+        guess = self._continuation('D', guess, 1e-9, False)
 
         self._solver(guess, self.c_list, self.K_list, self.C1, self.C2, self.D, get_values=True)
 
-    def _continuation(self, parameter_str, average, guess):
-        while True:
-            try:
-                guess_full = self._solver(guess, *self._parameter_full(parameter_str))
-                guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str, average))
-                guess_half_2 = self._solver(guess, *self._parameter_full(parameter_str))
-
-                if self._is_guess_converged(guess_full, guess_half_2):
-                    self._parameter_finish_init(parameter_str)
-                    return guess_full
-                else:
-                    self._parameter_change_curr(parameter_str, average)
-                    warnings.warn("{} continuation. Guess did not converge".format(parameter_str), Warning)
-
-            except Warning:
-                try:
-                    guess_full = self._solver(guess, *self._parameter_full(parameter_str))
-                    guess_half_1 = self._solver(guess, *self._parameter_half(parameter_str, average))
-                    guess_half_2 = self._solver(guess, *self._parameter_full(parameter_str))
-
-                    if not self._is_guess_converged(guess_full, guess_half_2):
-                        warnings.warn("{} continuation. Guess did not converge".format(parameter_str), Warning)
-
-                    self._parameter_change_init(parameter_str)
-                    self._parameter_target(parameter_str)
-                except Warning:
-                    self._parameter_change_curr(parameter_str, average)
-                    print(parameter_str + str(self._c_list_init))
-
-    def _parameter_full(self, parameter_str):
-        c_list = self._c_list_init
-        K_list = self._K_list_init
-        C1 = self._C1_init
-        C2 = self._C2_init
-        D = self._D_init
-        if parameter_str == 'c_list':
-            c_list = self._c_list_curr
-        elif parameter_str == 'K_list':
-            K_list = self._K_list_curr
-        elif parameter_str == 'C1':
-            C1 = self._C1_curr
-        elif parameter_str == 'C2':
-            C2 = self._C2_curr
-        elif parameter_str == 'D':
-            D = self._D_curr
-        return c_list, K_list, C1, C2, D
-
-    def _parameter_half(self, parameter_str, average):
-        c_list = self._c_list_init
-        K_list = self._K_list_init
-        C1 = self._C1_init
-        C2 = self._C2_init
-        D = self._D_init
-        if parameter_str == 'c_list':
-            c_list = average(c_list, self._c_list_curr)
-            c_list[0] = np.sum(c_list[1:])
-        elif parameter_str == 'K_list':
-            K_list = average(K_list, self._K_list_curr)
-        elif parameter_str == 'C1':
-            C1 = average(C1, self._C1_curr)
-        elif parameter_str == 'C2':
-            C2 = average(C2, self._C2_curr)
-        elif parameter_str == 'D':
-            D = average(D, self._D_curr)
-        return c_list, K_list, C1, C2, D
-
-    def _parameter_target(self, parameter_str):
-        if parameter_str == 'c_list':
-            self._c_list_curr = self.c_list
-        elif parameter_str == 'K_list':
-            self._K_list_curr = self.K_list
-        elif parameter_str == 'C1':
-            self._C1_curr = self.C1
-        elif parameter_str == 'C2':
-            self._C2_curr = self.C2
-        elif parameter_str == 'D':
-            self._D_curr = self.D
-
-    def _parameter_change_curr(self, parameter_str, average):
-        if parameter_str == 'c_list':
-            self._c_list_curr = average(self._c_list_init, self._c_list_curr)
-            self._c_list_curr[0] = np.sum(self._c_list_curr[1:])
-        elif parameter_str == 'K_list':
-            self._K_list_curr = average(self._K_list_init, self._K_list_curr)
-        elif parameter_str == 'C1':
-            self._C1_curr = average(self._C1_init, self._C1_curr)
-        elif parameter_str == 'C2':
-            self._C2_curr = average(self._C2_init, self._C2_curr)
-        elif parameter_str == 'D':
-            self._D_curr = average(self._D_init, self._D_curr)
-
-    def _parameter_change_init(self, parameter_str):
-        if parameter_str == 'c_list':
-            self._c_list_init = self._c_list_curr
-        elif parameter_str == 'K_list':
-            self._K_list_init = self._K_list_curr
-        elif parameter_str == 'C1':
-            self._C1_init = self._C1_curr
-        elif parameter_str == 'C2':
-            self._C2_init = self._C2_curr
-        elif parameter_str == 'D':
-            self._D_init = self._D_curr
-
-    def _parameter_finish_init(self, parameter_str):
-        if parameter_str == 'c_list':
-            self._c_list_init = self.c_list
-        elif parameter_str == 'K_list':
-            self._K_list_init = self.K_list
-        elif parameter_str == 'C1':
-            self._C1_init = self.C1
-        elif parameter_str == 'C2':
-            self._C2_init = self.C2
-        elif parameter_str == 'D':
-            self._D_init = self.D
+    def _continuation(self, parameter_str, guess, step_size, log):
+        guess_list = [guess]
+        while not self._is_parameter_done(parameter_str):
+            self._increment_parameter(parameter_str, step_size, log)
+            guess_next = self._guess_next(guess_list)
+            guess = self._solver_init(guess_next)
+            guess_list = self._add_guess(guess_list, guess)
+        return guess
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
         pass
+
+    def _solver_init(self, guess):
+        return self._solver(guess, self._c_list_init, self._K_list_init,
+                            self._C1_init, self._C2_init, self._D_init)
+
+    #
+    # Used for continuation
+    #
+
+    @staticmethod
+    def _add_guess(guess_list, guess):
+        if len(guess_list) < 3:
+            return [guess, *guess_list]
+        else:
+            guess_list[1:] = guess_list[0:2]
+            guess_list[0] = guess
+            return guess_list
+
+    def _guess_next(self, guess_list):
+        if len(guess_list) == 1:
+            return self._solver_init(guess_list[0])
+        elif len(guess_list) == 2:
+            return self._continuation_linear(guess_list)
+        return self._continuation_quadratic(guess_list)
+
+    def _continuation_linear(self, guess_list):
+        pass
+
+    def _continuation_quadratic(self, guess_list):
+        pass
+
+    def _is_parameter_done(self, parameter_str):
+        return_bool = False
+        if parameter_str == 'c_list':
+            return_bool = all(self._c_list_init == self.c_list)
+        elif parameter_str == 'K_list':
+            return_bool = all(self._K_list_init == self.K_list)
+        elif parameter_str == 'C1':
+            return_bool = self._C1_init == self.C1
+        elif parameter_str == 'C2':
+            return_bool = self._C2_init == self.C2
+        elif parameter_str == 'D':
+            return_bool = self._D_init == self.D
+        if return_bool:
+            print(parameter_str + " success")
+        return return_bool
+
+    #
+    # Increments parameters
+    #
+
+    def _increment_parameter(self, parameter_str, step_size, log=False):
+        if parameter_str == 'c_list':
+            self._increment_c(step_size, log)
+        elif parameter_str == 'K_list':
+            self._increment_K(step_size, log)
+        elif parameter_str == 'C1':
+            self._C1_init = self._increment(self._C1_init, self.C1, step_size, log)
+        elif parameter_str == 'C2':
+            self._C2_init = self._increment(self._C2_init, self.C2, step_size, log)
+        elif parameter_str == 'D':
+            self._D_init = self._increment(self._D_init, self.D, step_size, log)
+
+    def _increment_c(self, step_size, log):
+        init = self._c_list_init[self._c_list_index]
+        final = self.c_list[self._c_list_index]
+
+        self._c_list_init[self._c_list_index] = self._increment(init, final, step_size, log)
+        self._c_list_init[0] = sum(self._c_list_init[1:])
+
+        init = self._c_list_init[self._c_list_index]
+        if init == final:
+            self._c_list_index += 1
+
+    def _increment_K(self, step_size, log):
+        init = self._K_list_init[self._K_list_index]
+        final = self.K_list[self._K_list_index]
+
+        self._K_list_init[self._K_list_index] = self._increment(init, final, step_size, log)
+
+        init = self._K_list_init[self._K_list_index]
+        if init == final:
+            self._K_list_index += 1
+
+    @staticmethod
+    def _increment(init, final, step_size, log):
+        if init == final:
+            return init
+
+        sign = (final - init) / abs(final - init)
+
+        if log:
+            init = 10**(np.log10(init) + sign * step_size)
+        else:
+            init = init + sign * step_size
+
+        if sign * init > sign * final:
+            return final
+        else:
+            return init
 
     #
     # Initializes starting c and K values for continuation
@@ -186,54 +180,35 @@ class Solution:
             self._c_list_init = np.append(np.sum(self._c_list_init), self._c_list_init)
         else:
             self._c_list_init = c_list_init
-        self._c_list_curr = self.c_list
+        self._c_list_index = 1
 
     def _create_K_list_init(self, K_list_init):
         if K_list_init is None:
             self._K_list_init = np.array([1e2] * len(self.K_list))
         else:
             self._K_list_init = K_list_init
-        self._K_list_curr = self.K_list
+        self._K_list_index = 0
 
     def _create_C1_init(self, C1_init):
         if C1_init is None:
             self._C1_init = 0.5
         else:
             self._C1_init = C1_init
-        self._C1_curr = self.C1
 
     def _create_C2_init(self, C2_init):
         if C2_init is None:
             self._C2_init = 0.5
         else:
             self._C2_init = C2_init
-        self._C2_curr = self.C2
 
     def _create_D_init(self, D_init):
         if D_init is None:
             self._D_init = 10e-9
         else:
             self._D_init = D_init
-        self._D_curr = self.D
 
     def _create_guess(self, guess):
         return guess
-
-    #
-    # Utility methods
-    #
-
-    @staticmethod
-    def _log_mean(x, y):
-        return 10**Solution._mean(np.log10(x), np.log10(y))
-
-    @staticmethod
-    def _mean(x, y):
-        return (x + y) / 2
-
-    @staticmethod
-    def _is_guess_converged(guess_1, guess_2):
-        return False
 
 
 class Solution1Plate(Solution):
@@ -293,6 +268,24 @@ class Solution1Plate(Solution):
             solution = root(equations, guess, method='lm', tol=1e-10)
             return solution.x
 
+    def _continuation_linear(self, guess_list):
+        guess = np.zeros(len(guess_list[0]))
+        for i in range(len(guess)):
+            lin_reg = np.poly1d(np.polyfit([0, 1],
+                                           [guess_list[0][i], guess_list[1][i]],
+                                           1))
+            guess[i] = lin_reg(-1)
+        return guess
+
+    def _continuation_quadratic(self, guess_list):
+        guess = np.zeros(len(guess_list[0]))
+        for i in range(len(guess)):
+            quad_reg = np.poly1d(np.polyfit([0, 1, 2],
+                                 [guess_list[0][i], guess_list[1][i], guess_list[2][i]],
+                                 2))
+            guess[i] = quad_reg(-1)
+        return guess
+
     def _create_guess(self, guess):
         if guess is None:
             num_cat = len(self.c_list) - 1
@@ -305,17 +298,9 @@ class Solution1Plate(Solution):
                                  -4.72002436e+21,  4.82749852e+18])
             guess = np.array([SM_poly(num_cat * 1e-3)] * num_cat)
             guess = np.append(psi_d_poly(num_cat * 1e-3), guess)
+            guess = self._solver(guess, self._c_list_init, self._K_list_init,
+                                 self._C1_init, self._C2_init, self._D_init)
         return guess
-
-    @staticmethod
-    def _is_guess_converged(guess_1, guess_2):
-        i = 0
-        for i in range(len(guess_1)):
-            item_1 = guess_1[i]
-            item_2 = guess_2[i]
-            if abs(item_1 - item_2) > 1e-3:
-                return False
-        return True
 
 
 class Solution2Plate(Solution):
