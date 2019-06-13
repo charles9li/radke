@@ -1,13 +1,13 @@
 import numpy as np
-from scipy.constants import e, k, epsilon_0, R
+from scipy.constants import e, k, epsilon_0, R, N_A
 from scipy.optimize import root
 from scipy.integrate import odeint, simps, solve_bvp
 
 
 class Solution:
 
-    def __init__(self, c_list, K_list, z_list, v_list, D,
-                 pH=5.8, pKa=5.3, pH_effect=True, C1=0.5, C2=0.5, T=298, L=2e18):
+    def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
+                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80):
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
         self.z_list = np.array(z_list)
@@ -20,11 +20,15 @@ class Solution:
         self.C2 = C2
         self.T = T
         self.L = L
+        self.eps = eps_r * epsilon_0
         if pH_effect:
             self.c_list = np.append(self.c_list, 10**-pH)
             self.K_list = np.append(self.K_list, 10**pKa)
             self.z_list = np.append(self.z_list, 1)
             self.v_list = np.append(self.v_list, True)
+
+    def compute_kappa(self, c_list):
+        return np.sqrt(e**2*np.sum(self.z_list**2*self.c_list)/(self.eps*k*self.T))
 
     def solve_equations(self, c_list_init=None, K_list_init=None,
                         C1_init=None, C2_init=None, D_init=None, guess=None):
@@ -304,4 +308,36 @@ class Solution1Plate(Solution):
 class Solution2Plate(Solution):
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
-        pass
+        rho_list = 1000*N_A*c_list
+
+        def solve_ode(guess):
+            sigma_d = guess[0]
+
+            def fun(x, psi):
+                rho = np.zeros(len(x))
+                for i in range(len(rho_list)):
+                    rho_bulk = rho_list[i]
+                    z = self.z_list[i]
+                    rho += rho_bulk*np.exp(-z*e*psi[0]/(k*self.T))
+
+                dpsi = psi[1]
+                d2psi = -e/self.eps*rho
+                return np.vstack((dpsi, d2psi))
+
+            def bc(psia, psib):
+                return np.array([psia[1] - sigma_d/self.eps, psib[1]+psia[1]])
+
+            size = 50
+            x_dist = np.linspace(0, D, size)
+            if type(psi_guess) == bool:
+                psi_guess = -sigma_d/(eps_0*eps_bulk*kappa)*np.exp(-kappa*x_dist[0:size//2])
+                psi_guess = np.concatenate((psi_guess, list(reversed(psi_guess))))
+                dpsi_guess = sigma_d/(eps_0*eps_bulk)*np.exp(-kappa*x_dist[0:size//2])
+                dpsi_guess = np.concatenate((dpsi_guess, list(reversed(dpsi_guess))))
+                psi_guess = np.vstack((psi_guess, dpsi_guess))
+
+    def _create_guess(self, guess):
+        if guess is None:
+            guess = np.zeros(2)
+            guess[0] = 0
+        return guess
