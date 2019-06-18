@@ -33,8 +33,7 @@ class Solution:
     def compute_kappa(self, c_list):
         return np.sqrt(e**2*np.sum(self.z_list**2*self.c_list)/(self.eps*k*self.T))
 
-    def solve_equations(self, c_list_init=None, K_list_init=None,
-                        C1_init=None, C2_init=None, D_init=None, guess=None):
+    def solve_equations(self, solution=None):
         """Solves equations to find potential profiles and surface charge
         densities.
 
@@ -44,14 +43,14 @@ class Solution:
         """
 
         # Initialize starting point for continuation
-        self._create_c_list_init(c_list_init)
-        self._create_K_list_init(K_list_init)
-        self._create_C1_init(C1_init)
-        self._create_C2_init(C2_init)
-        self._create_D_init(D_init)
+        self._create_c_list_init(solution)
+        self._create_K_list_init(solution)
+        self._create_C1_init(solution)
+        self._create_C2_init(solution)
+        self._create_D_init(solution)
 
         # Initialize guess
-        guess = self._create_guess(guess)
+        guess = self._create_guess(solution)
 
         # Run continuation for each parameter
         guess = self._continuation('c_list', guess, 0.01, True)
@@ -179,38 +178,38 @@ class Solution:
     # Initializes starting c and K values for continuation
     #
 
-    def _create_c_list_init(self, c_list_init):
-        if c_list_init is None:
+    def _create_c_list_init(self, solution):
+        if solution is None:
             self._c_list_init = np.array([1e-3] * len(self.c_list[self.v_list]))
             self._c_list_init = np.append(np.sum(self._c_list_init), self._c_list_init)
         else:
-            self._c_list_init = c_list_init
+            self._c_list_init = solution.c_list
         self._c_list_index = 1
 
-    def _create_K_list_init(self, K_list_init):
-        if K_list_init is None:
+    def _create_K_list_init(self, solution):
+        if solution is None:
             self._K_list_init = np.array([1e2] * len(self.K_list))
         else:
-            self._K_list_init = K_list_init
+            self._K_list_init = solution.K_list
         self._K_list_index = 0
 
-    def _create_C1_init(self, C1_init):
-        if C1_init is None:
+    def _create_C1_init(self, solution):
+        if solution is None:
             self._C1_init = 0.5
         else:
-            self._C1_init = C1_init
+            self._C1_init = solution.C1
 
-    def _create_C2_init(self, C2_init):
-        if C2_init is None:
+    def _create_C2_init(self, solution):
+        if solution is None:
             self._C2_init = 0.5
         else:
-            self._C2_init = C2_init
+            self._C2_init = solution.C2
 
-    def _create_D_init(self, D_init):
-        if D_init is None:
+    def _create_D_init(self, solution):
+        if solution is None:
             self._D_init = 10e-9
         else:
-            self._D_init = D_init
+            self._D_init = solution.D
 
     def _create_guess(self, guess):
         return guess
@@ -291,8 +290,8 @@ class Solution1Plate(Solution):
             guess[i] = quad_reg(-1)
         return guess
 
-    def _create_guess(self, guess):
-        if guess is None:
+    def _create_guess(self, solution):
+        if solution is None:
             num_cat = len(self.c_list) - 1
             psi_d_poly = np.poly1d([3.25590388e+09, -1.08057231e+08,
                                     1.41687447e+06, -9.49887189e+03,
@@ -304,7 +303,9 @@ class Solution1Plate(Solution):
             guess = np.array([SM_poly(num_cat * 1e-3)] * num_cat)
             guess = np.append(psi_d_poly(num_cat * 1e-3), guess)
             guess = self._solver(guess, self._c_list_init, self._K_list_init,
-                                 self._C1_init, self._C2_init, self._D_init)
+                                    self._C1_init, self._C2_init, self._D_init)
+        else:
+            guess = solution.guess
         return guess
 
 
