@@ -6,6 +6,9 @@ from scipy.integrate import odeint, simps, solve_bvp
 
 class Solution:
 
+    SM_list = None
+    guess = None
+
     def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
                  pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80):
         self.c_list = np.array(c_list)
@@ -105,9 +108,9 @@ class Solution:
     def _is_parameter_done(self, parameter_str):
         return_bool = False
         if parameter_str == 'c_list':
-            return_bool = all(self._c_list_init == self.c_list)
+            return_bool = self._c_list_index >= len(self._c_list_init)
         elif parameter_str == 'K_list':
-            return_bool = all(self._K_list_init == self.K_list)
+            return_bool = self._K_list_index >= len(self._K_list_init)
         elif parameter_str == 'C1':
             return_bool = self._C1_init == self.C1
         elif parameter_str == 'C2':
@@ -325,7 +328,7 @@ class Solution2Plate(Solution):
                 return np.vstack((dpsi, d2psi))
 
             def bc(psia, psib):
-                return np.array([psia[1] - sigma_d/self.eps, psib[1]+psia[1]])
+                return np.array([psia[1] - sigma_d/self.eps, psib[1] + psia[1]])
 
             size = 50
             x_dist = np.linspace(0, D, size)
