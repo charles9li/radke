@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.constants import e, k, epsilon_0, R, N_A
-from scipy.optimize import root
+from scipy.optimize import root, fsolve
 from scipy.integrate import odeint, simps, solve_bvp
 
 
@@ -211,8 +211,16 @@ class Solution:
         else:
             self._D_init = solution.D
 
-    def _create_guess(self, guess):
-        return guess
+    def _create_guess(self, solution):
+        return solution
+
+    #
+    # Utility methods
+    #
+
+    @staticmethod
+    def _assert_no_pH_effect():
+        assert False, "pH effect not implemented"
 
 
 class Solution1Plate(Solution):
@@ -225,7 +233,7 @@ class Solution1Plate(Solution):
             # Compute sigma_d
             c_bulk_sum = 1000*np.sum(c_list)
             c_d_sum = 1000*np.sum(c_list*np.exp(-self.z_list*e*psi_d/(k*self.T)))
-            sigma_d = -psi_d/abs(psi_d)*np.sqrt(2*R*self.T*79*epsilon_0*(c_d_sum - c_bulk_sum))
+            sigma_d = -psi_d/abs(psi_d)*np.sqrt(2*R*self.T*self.eps*(c_d_sum - c_bulk_sum))
 
             # Compute psi_beta and number of free sites S
             psi_beta = psi_d - sigma_d/C2
@@ -292,18 +300,21 @@ class Solution1Plate(Solution):
 
     def _create_guess(self, solution):
         if solution is None:
-            num_cat = len(self.c_list) - 1
-            psi_d_poly = np.poly1d([3.25590388e+09, -1.08057231e+08,
-                                    1.41687447e+06, -9.49887189e+03,
-                                    3.72769964e+01, -1.36321197e-01])
-            SM_poly = np.poly1d([-1.52703963e+34,  6.65368881e+32,
-                                 -1.21054552e+31,  1.19304587e+29,
-                                 -6.90913117e+26,  2.38311837e+24,
-                                 -4.72002436e+21,  4.82749852e+18])
+            if self.pH_effect:
+                self._assert_no_pH_effect()
+            else:
+                num_cat = len(self.c_list) - 1
+                psi_d_poly = np.poly1d([3.25590388e+09, -1.08057231e+08,
+                                        1.41687447e+06, -9.49887189e+03,
+                                        3.72769964e+01, -1.36321197e-01])
+                SM_poly = np.poly1d([-1.52703963e+34,  6.65368881e+32,
+                                     -1.21054552e+31,  1.19304587e+29,
+                                     -6.90913117e+26,  2.38311837e+24,
+                                     -4.72002436e+21,  4.82749852e+18])
             guess = np.array([SM_poly(num_cat * 1e-3)] * num_cat)
             guess = np.append(psi_d_poly(num_cat * 1e-3), guess)
             guess = self._solver(guess, self._c_list_init, self._K_list_init,
-                                    self._C1_init, self._C2_init, self._D_init)
+                                 self._C1_init, self._C2_init, self._D_init)
         else:
             guess = solution.guess
         return guess
@@ -312,10 +323,28 @@ class Solution1Plate(Solution):
 class Solution2Plate(Solution):
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
+
         rho_list = 1000*N_A*c_list
 
-        def solve_ode(guess):
+        sigma_d_guess = guess[0]
+        D_guess = guess[1]
+        sol_guess = guess[2]
+
+        size = 50
+        if sol_guess is None:
+            x_guess = np.linspace(0, D, size)
+            kappa = self.compute_kappa(c_list)
+            psi_guess = -sigma_d_guess/(self.eps*kappa)*np.exp(-kappa*x_guess[0:size//2])
+            psi_guess = np.concatenate((psi_guess, list(reversed(psi_guess))))
+            dpsi_guess = sigma_d_guess/self.eps*np.exp(-kappa*x_guess[0:size//2])
+            dpsi_guess = np.concatenate((dpsi_guess, list(reversed(dpsi_guess))))
+            psi_guess = np.vstack((psi_guess, dpsi_guess))
+        else:
             sigma_d = guess[0]
+            x_guess = np.linspace(0, D, size)
+            psi_guess = guess[2]
+
+        def solve_ode(guess):
 
             def fun(x, psi):
                 rho = np.zeros(len(x))
@@ -331,17 +360,42 @@ class Solution2Plate(Solution):
             def bc(psia, psib):
                 return np.array([psia[1] - sigma_d/self.eps, psib[1] + psia[1]])
 
-            size = 50
-            x_dist = np.linspace(0, D, size)
-            if type(psi_guess) == bool:
-                psi_guess = -sigma_d/(eps_0*eps_bulk*kappa)*np.exp(-kappa*x_dist[0:size//2])
-                psi_guess = np.concatenate((psi_guess, list(reversed(psi_guess))))
-                dpsi_guess = sigma_d/(eps_0*eps_bulk)*np.exp(-kappa*x_dist[0:size//2])
-                dpsi_guess = np.concatenate((dpsi_guess, list(reversed(dpsi_guess))))
-                psi_guess = np.vstack((psi_guess, dpsi_guess))
+            res = solve_bvp(fun, bc, x_guess, psi_guess)
+            return res.sol
 
-    def _create_guess(self, guess):
-        if guess is None:
-            guess = np.zeros(2)
-            guess[0] = 0
+        def equations(sigma_d, psi_beta):
+            S = sigma_d/e
+
+            if self.pH_effect:
+                self._assert_no_pH_effect()
+            else:
+                sigma_0 = -e*self.L
+                SM_list = K_list*c_list[self.v_list]*S*np.exp(-self.z_list[self.v_list]*e*psi_beta/(k*self.T))
+                SH = 0
+                sigma_beta = sum(SM_list)*e
+
+            if get_values:
+                self.sigma_0 = sigma_0
+                self.SM_list = SM_list
+                self.SH = SH
+            else:
+                return sigma_0, sigma_beta
+
+        def objective(sigma_d):
+            pass
+
+        if get_values:
+            pass
+        else:
+            sigma_d = fsolve(objective, sigma_d_guess)
+            return sigma_d, D
+
+    def _create_guess(self, solution):
+        if solution is None:
+            guess = (0, 10e-9, None)
+        else:
+            guess = solution.guess
         return guess
+
+    def _guess_next(self, guess_list):
+        pass
