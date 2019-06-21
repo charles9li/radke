@@ -331,20 +331,24 @@ class Solution2Plate(Solution):
         sol_guess = guess[2]
 
         size = 50
+        x_guess = np.linspace(0, D, size)
         if sol_guess is None:
-            x_guess = np.linspace(0, D, size)
             kappa = self.compute_kappa(c_list)
             psi_guess = -sigma_d_guess/(self.eps*kappa)*np.exp(-kappa*x_guess[0:size//2])
             psi_guess = np.concatenate((psi_guess, list(reversed(psi_guess))))
             dpsi_guess = sigma_d_guess/self.eps*np.exp(-kappa*x_guess[0:size//2])
             dpsi_guess = np.concatenate((dpsi_guess, list(reversed(dpsi_guess))))
             psi_guess = np.vstack((psi_guess, dpsi_guess))
+        elif type(sol_guess) is tuple:
+            psi_guess = np.zeros(len(x_guess))
+            dpsi_guess = np.zeros(len(x_guess))
+            for i in range(len(psi_guess)):
+                pass
         else:
-            sigma_d = guess[0]
-            x_guess = np.linspace(0, D, size)
-            psi_guess = guess[2]
+            psi_guess = sol_guess(x_guess/D*D_guess)[0]
+            dpsi_guess = sol_guess(x_guess/D*D_guess)[1]
 
-        def solve_ode(guess):
+        def solve_ode(sigma_d):
 
             def fun(x, psi):
                 rho = np.zeros(len(x))
@@ -361,9 +365,19 @@ class Solution2Plate(Solution):
                 return np.array([psia[1] - sigma_d/self.eps, psib[1] + psia[1]])
 
             res = solve_bvp(fun, bc, x_guess, psi_guess)
-            return res.sol
+            sol = res.sol
 
-        def equations(sigma_d, psi_beta):
+            if get_values:
+                psi_beta = sol(0)[0] - sigma_d/C2
+                sigma_0, sigma_beta = equations(sigma_d, psi_beta)
+                self.sigma_0 = sigma_0
+                self.sigma_beta = sigma_beta
+                self.sigma_d = sigma_d
+                self.sol = sol
+            else:
+                return sol
+
+        def equations(sigma_d, psi_beta, get_values):
             S = sigma_d/e
 
             if self.pH_effect:
@@ -378,24 +392,58 @@ class Solution2Plate(Solution):
                 self.sigma_0 = sigma_0
                 self.SM_list = SM_list
                 self.SH = SH
-            else:
-                return sigma_0, sigma_beta
+            return sigma_0, sigma_beta
 
         def objective(sigma_d):
-            pass
+            sol = solve_ode(sigma_d)
+            psi_beta = sol(0)[0] - sigma_d/C2
+            sigma_0, sigma_beta = equations(sigma_d, psi_beta)
+            return sigma_0 + sigma_beta + sigma_d
 
         if get_values:
-            pass
+            solve_ode(sigma_d_guess)
         else:
             sigma_d = fsolve(objective, sigma_d_guess)
-            return sigma_d, D
+            sol = solve_ode(sigma_d)
+            return sigma_d, D, sol
 
     def _create_guess(self, solution):
         if solution is None:
-            guess = (0, 10e-9, None)
+            num_cat = len(self.c_list) - 1
+            sigma_d_reg = np.poly1d([0.23274843, -0.07449596, 0.01438773])
+            sigma_d = sigma_d_reg(num_cat * 1e-2)
+            guess = (sigma_d, 10e-9, None)
         else:
             guess = solution.guess
         return guess
 
     def _guess_next(self, guess_list):
         pass
+
+    def _continuation_linear(self, guess_list):
+        guess = [0, 0, 0]
+        lin_reg = np.poly1d(np.polyfit([0, 1],
+                                       [guess_list[0][0], guess_list[1][0]],
+                                       1))
+        guess[0] = lin_reg(-1)
+        guess[1] = (guess_list[0][1], guess_list[1][1])
+        guess[2] = (guess_list[0][2], guess_list[1][2])
+        return guess
+
+    def _continuation_quadratic(self, guess_list):
+        guess = [0, 0, 0]
+        quad_reg = np.poly1d(np.polyfit([0, 1, 2],
+                                        [guess_list[0][0], guess_list[1][0], guess_list[2][0]],
+                                        2))
+        guess[0] = quad_reg(-1)
+        guess[1] = (guess_list[0][1], guess_list[1][1], guess_list[2][1])
+        guess[2] = (guess_list[0][2], guess_list[1][2], guess_list[2][2])
+        return guess
+
+    def _create_c_list_init(self, solution):
+        if solution is None:
+            self._c_list_init = np.array([1e-2] * len(self.c_list[self.v_list]))
+            self._c_list_init = np.append(np.sum(self._c_list_init), self._c_list_init)
+        else:
+            self._c_list_init = solution.c_list
+        self._c_list_index = 1
