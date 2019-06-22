@@ -30,8 +30,8 @@ class Solution:
             self.z_list = np.append(self.z_list, 1)
             self.v_list = np.append(self.v_list, True)
 
-    def compute_kappa(self, c_list):
-        return np.sqrt(e**2*np.sum(self.z_list**2*self.c_list)/(self.eps*k*self.T))
+    def compute_kappa(self, rho_list):
+        return np.sqrt(e**2*np.sum(self.z_list**2*rho_list)/(self.eps*k*self.T))
 
     def solve_equations(self, solution=None):
         """Solves equations to find potential profiles and surface charge
@@ -333,20 +333,26 @@ class Solution2Plate(Solution):
         size = 50
         x_guess = np.linspace(0, D, size)
         if sol_guess is None:
-            kappa = self.compute_kappa(c_list)
+            kappa = self.compute_kappa(rho_list)
             psi_guess = -sigma_d_guess/(self.eps*kappa)*np.exp(-kappa*x_guess[0:size//2])
             psi_guess = np.concatenate((psi_guess, list(reversed(psi_guess))))
             dpsi_guess = sigma_d_guess/self.eps*np.exp(-kappa*x_guess[0:size//2])
             dpsi_guess = np.concatenate((dpsi_guess, list(reversed(dpsi_guess))))
-            psi_guess = np.vstack((psi_guess, dpsi_guess))
         elif type(sol_guess) is tuple:
             psi_guess = np.zeros(len(x_guess))
             dpsi_guess = np.zeros(len(x_guess))
-            for i in range(len(psi_guess)):
-                pass
+            psi_guess_list = [sol_guess[i](x_guess/D*D_guess[i])[0] for i in range(len(D_guess))]
+            dpsi_guess_list = [sol_guess[i](x_guess/D*D_guess[i])[1] for i in range(len(D_guess))]
+            for i in range(len(x_guess)):
+                x = [j for j in range(len(psi_guess_list))]
+                y = [psi_guess_list[j][i] for j in range(len(psi_guess_list))]
+                dy = [dpsi_guess_list[j][i] for j in range(len(psi_guess_list))]
+                psi_guess[i] = np.poly1d(np.polyfit(x, y, len(psi_guess_list) - 1))(-1)
+                dpsi_guess[i] = np.poly1d(np.polyfit(x, dy, len(dpsi_guess_list) - 1))(-1)
         else:
             psi_guess = sol_guess(x_guess/D*D_guess)[0]
             dpsi_guess = sol_guess(x_guess/D*D_guess)[1]
+        psi_guess = np.vstack((psi_guess, dpsi_guess))
 
         def solve_ode(sigma_d):
 
@@ -397,7 +403,7 @@ class Solution2Plate(Solution):
         def objective(sigma_d):
             sol = solve_ode(sigma_d)
             psi_beta = sol(0)[0] - sigma_d/C2
-            sigma_0, sigma_beta = equations(sigma_d, psi_beta)
+            sigma_0, sigma_beta = equations(sigma_d, psi_beta, False)
             return sigma_0 + sigma_beta + sigma_d
 
         if get_values:
@@ -413,6 +419,7 @@ class Solution2Plate(Solution):
             sigma_d_reg = np.poly1d([0.23274843, -0.07449596, 0.01438773])
             sigma_d = sigma_d_reg(num_cat * 1e-2)
             guess = (sigma_d, 10e-9, None)
+            guess = self._solver_init(guess)
         else:
             guess = solution.guess
         return guess
