@@ -66,11 +66,6 @@ class _Solution:
     def _continuation(self, parameter_str, guess, step_size, log):
         guess_list = [guess]
         while not self._is_parameter_done(parameter_str):
-            print(str(self._c_list_init) + " " + str(guess[0]))
-            x = np.linspace(0, guess[1], 50)
-            y = guess[2](x)[0]
-            plt.plot(x*1e9, y*1000)
-            plt.show()
             self._increment_parameter(parameter_str, step_size, log)
             guess_next = self._guess_next(guess_list)
             guess = self._solver_init(guess_next)
@@ -367,7 +362,7 @@ class Solution2Plate(_Solution):
                 for i in range(len(rho_list)):
                     rho_bulk = rho_list[i]
                     z = self.z_list[i]
-                    rho += rho_bulk*np.exp(-z*e*psi[0]/(k*self.T))
+                    rho += z*rho_bulk*np.exp(-z*e*psi[0]/(k*self.T))
 
                 dpsi = psi[1]
                 d2psi = -e/self.eps*rho
@@ -399,11 +394,6 @@ class Solution2Plate(_Solution):
                 SM_list = K_list*c_list[self.v_list]*S*np.exp(-self.z_list[self.v_list]*e*psi_beta/(k*self.T))
                 SH = 0
                 sigma_beta = sum(SM_list)*e
-
-            if get_values:
-                self.sigma_0 = sigma_0
-                self.SM_list = SM_list
-                self.SH = SH
             return sigma_0, sigma_beta
 
         def objective(sigma_d):
