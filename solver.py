@@ -1,10 +1,11 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.constants import e, k, epsilon_0, R, N_A
 from scipy.optimize import root, fsolve
 from scipy.integrate import odeint, simps, solve_bvp
 
 
-class Solution:
+class _Solution:
 
     SM_list = None
     guess = None
@@ -65,6 +66,11 @@ class Solution:
     def _continuation(self, parameter_str, guess, step_size, log):
         guess_list = [guess]
         while not self._is_parameter_done(parameter_str):
+            print(str(self._c_list_init) + " " + str(guess[0]))
+            x = np.linspace(0, guess[1], 50)
+            y = guess[2](x)[0]
+            plt.plot(x*1e9, y*1000)
+            plt.show()
             self._increment_parameter(parameter_str, step_size, log)
             guess_next = self._guess_next(guess_list)
             guess = self._solver_init(guess_next)
@@ -223,7 +229,7 @@ class Solution:
         assert False, "pH effect not implemented"
 
 
-class Solution1Plate(Solution):
+class Solution1Plate(_Solution):
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
         def equations(guess):
@@ -320,7 +326,7 @@ class Solution1Plate(Solution):
         return guess
 
 
-class Solution2Plate(Solution):
+class Solution2Plate(_Solution):
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
 
@@ -383,7 +389,7 @@ class Solution2Plate(Solution):
             else:
                 return sol
 
-        def equations(sigma_d, psi_beta, get_values):
+        def equations(sigma_d, psi_beta):
             S = sigma_d/e
 
             if self.pH_effect:
@@ -403,13 +409,13 @@ class Solution2Plate(Solution):
         def objective(sigma_d):
             sol = solve_ode(sigma_d)
             psi_beta = sol(0)[0] - sigma_d/C2
-            sigma_0, sigma_beta = equations(sigma_d, psi_beta, False)
+            sigma_0, sigma_beta = equations(sigma_d, psi_beta)
             return sigma_0 + sigma_beta + sigma_d
 
         if get_values:
             solve_ode(sigma_d_guess)
         else:
-            sigma_d = fsolve(objective, sigma_d_guess)
+            sigma_d = fsolve(objective, sigma_d_guess)[0]
             sol = solve_ode(sigma_d)
             return sigma_d, D, sol
 
@@ -423,9 +429,6 @@ class Solution2Plate(Solution):
         else:
             guess = solution.guess
         return guess
-
-    def _guess_next(self, guess_list):
-        pass
 
     def _continuation_linear(self, guess_list):
         guess = [0, 0, 0]
