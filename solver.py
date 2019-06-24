@@ -381,6 +381,8 @@ class Solution2Plate(_Solution):
                 self.sigma_beta = sigma_beta
                 self.sigma_d = sigma_d
                 self.sol = sol
+                self.psi_m = sol(D/2)[0]
+                self.P = self._compute_P()
             else:
                 return sol
 
@@ -447,3 +449,9 @@ class Solution2Plate(_Solution):
         else:
             self._c_list_init = solution.c_list
         self._c_list_index = 1
+
+    def _compute_P(self):
+        rho_list = self.c_list*N_A*1000
+        rho_m = sum(rho_list*np.exp(-self.z_list*e*self.psi_m/(k*self.T)))
+        rho_bulk = sum(rho_list)
+        return k*self.T*(rho_m-rho_bulk)
