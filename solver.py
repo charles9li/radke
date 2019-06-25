@@ -455,3 +455,6 @@ class Solution2Plate(_Solution):
         rho_m = sum(rho_list*np.exp(-self.z_list*e*self.psi_m/(k*self.T)))
         rho_bulk = sum(rho_list)
         return k*self.T*(rho_m-rho_bulk)
+
+    def psi_profile(self, x):
+        return self.sol(x)[0]
