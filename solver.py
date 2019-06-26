@@ -1,7 +1,6 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.constants import e, epsilon_0, k, N_A, R
-from scipy.integrate import quad, solve_bvp
+from scipy.integrate import quad, solve_bvp, trapz
 from scipy.interpolate import interp1d
 from scipy.optimize import fsolve, root
 
@@ -480,7 +479,7 @@ class Force:
             sol = Solution2Plate(c_list, K_list, z_list, v_list, D, C1=C1, C2=C2,
                                  pH=pH, pKa=pKa, pH_effect=pH_effect, T=T, L=L, eps_r=eps_r)
             sol.solve_equations(solution)
-            return sol.P
+            return sol
 
         self._compute_sol = compute_sol
         self.R_cr = self.R_cr_dict[cation]
@@ -491,7 +490,10 @@ class Force:
         self.compute_W_osmotic(D_start)
         W_vdw_list = np.zeros(len(self.D_list))
         for i in range(len(W_vdw_list)):
-            W_vdw_list[i] = -self.A/(12*np.pi*(self.D_list[i]+2*self.R_cr+4*self.R_hyd)^2)
+            W_vdw_list[i] = -self.A/(12*np.pi*(self.D_list[i]+2*self.R_cr+4*self.R_hyd)**2)
+        self.W_vdw_list = W_vdw_list
+        self.W_list = self.W_osmotic_list + W_vdw_list
+        self.F_list = 2*np.pi*self.W_list
 
     def compute_W_osmotic(self, D_start):
         D_list = np.array([])
@@ -501,18 +503,21 @@ class Force:
         W_curr = self._integrate_P(D_list, P_list)
         D = D_start
 
-        while abs((W_curr-W_prev)/W_prev) > 1e-3 and len(D_list) > 2:
+        while abs((W_curr-W_prev)/W_prev) > 1e-10 or len(D_list) < 3:
+            print(D*1e9)
             sol = self._compute_sol(D, sol_prev)
             sol_prev = sol
             D_list = np.append(D_list, D)
             P_list = np.append(P_list, sol.P)
             W_prev = W_curr
             W_curr = self._integrate_P(D_list, P_list)
+            D = self._increment_D(D)
 
         W_osmotic_list = np.zeros(len(D_list) - 1)
         P_interp = interp1d(D_list, P_list, kind='cubic')
         for i in range(len(W_osmotic_list)):
-            W_osmotic_list[i] = quad(P_interp, D_list[i], D_list[-1])
+            W_osmotic = quad(P_interp, D_list[i], D_list[-1])[0]
+            W_osmotic_list[i] = W_osmotic
 
         self.D_list = D_list[:-1]
         self.W_osmotic_list = W_osmotic_list
@@ -521,9 +526,12 @@ class Force:
     def _integrate_P(D_list, P_list):
         if len(D_list) <= 1:
             return 1
+        elif len(D_list) <= 3:
+            return trapz(P_list, x=D_list)
         else:
             P_interp = interp1d(D_list, P_list, kind='cubic')
-            return quad(P_interp, D_list[0], D_list[-1])
+            W = quad(P_interp, D_list[0], D_list[-1])[0]
+            return W
 
     @staticmethod
     def _increment_D(D):
