@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.constants import e, k, epsilon_0, R, N_A
-from scipy.optimize import root, fsolve
-from scipy.integrate import odeint, simps, solve_bvp
+from scipy.constants import e, epsilon_0, k, N_A, R
+from scipy.integrate import quad, solve_bvp
+from scipy.interpolate import interp1d
+from scipy.optimize import fsolve, root
 
 
 class _Solution:
@@ -481,30 +482,48 @@ class Force:
             sol.solve_equations(solution)
             return sol.P
 
-        self.compute_sol = compute_sol
+        self._compute_sol = compute_sol
+        self.R_cr = self.R_cr_dict[cation]
+        self.R_hyd = self.R_hyd_dict[cation]
+        self.A = A
 
-    def compute_W(self, D_start):
-        D = D_start
-        D_list = np.array([D_start])
-        sol = self.compute_sol(D_start, None)
-        sol_prev = sol
-        P_list = [sol.P]
-        W_list = np.array([])
-        W_curr = 1
+    def compute_F(self, D_start):
+        self.compute_W_osmotic(D_start)
+        W_vdw_list = np.zeros(len(self.D_list))
+        for i in range(len(W_vdw_list)):
+            W_vdw_list[i] = -self.A/(12*np.pi*(self.D_list[i]+2*self.R_cr+4*self.R_hyd)^2)
+
+    def compute_W_osmotic(self, D_start):
+        D_list = np.array([])
+        P_list = np.array([])
+        sol_prev = None
         W_prev = -1
-        D = self._increment_D(D)
-        while abs((W_curr-W_prev)/W_prev) < 1e-3:
-            sol = self.compute_sol(D, sol_prev)
+        W_curr = self._integrate_P(D_list, P_list)
+        D = D_start
+
+        while abs((W_curr-W_prev)/W_prev) > 1e-3 and len(D_list) > 2:
+            sol = self._compute_sol(D, sol_prev)
+            sol_prev = sol
             D_list = np.append(D_list, D)
-            P_list += [sol.P]
-            del_W = np.sum(P_list[-2:])*(D_list[-1]-D_list[-2])
-            W_list = np.append(W_list, 0)
-            W_list += del_W
+            P_list = np.append(P_list, sol.P)
             W_prev = W_curr
-            W_curr = W_list[0]
-            D = self._increment_D(D)
-        self.D_list = D_list[0:-1]
-        self.W_list = W_list
+            W_curr = self._integrate_P(D_list, P_list)
+
+        W_osmotic_list = np.zeros(len(D_list) - 1)
+        P_interp = interp1d(D_list, P_list, kind='cubic')
+        for i in range(len(W_osmotic_list)):
+            W_osmotic_list[i] = quad(P_interp, D_list[i], D_list[-1])
+
+        self.D_list = D_list[:-1]
+        self.W_osmotic_list = W_osmotic_list
+
+    @staticmethod
+    def _integrate_P(D_list, P_list):
+        if len(D_list) <= 1:
+            return 1
+        else:
+            P_interp = interp1d(D_list, P_list, kind='cubic')
+            return quad(P_interp, D_list[0], D_list[-1])
 
     @staticmethod
     def _increment_D(D):
