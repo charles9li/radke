@@ -458,3 +458,57 @@ class Solution2Plate(_Solution):
 
     def psi_profile(self, x):
         return self.sol(x)[0]
+
+
+class Force:
+
+    R_cr_dict = {"Li": 60e-12,
+                 "Na": 98e-12,
+                 "K": 133e-12,
+                 "Cs": 169e-12}
+    R_hyd_dict = {"Li": 3.82e-10,
+                  "Na": 3.52e-10,
+                  "K": 3.31e-10,
+                  "Cs": 3.29e-10}
+
+    def __init__(self, c_list, K_list, z_list, v_list, C1=0.5, C2=0.5,
+                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80,
+                 A=2.2e-20, cation="Li"):
+
+        def compute_sol(D, solution):
+            sol = Solution2Plate(c_list, K_list, z_list, v_list, D, C1=C1, C2=C2,
+                                 pH=pH, pKa=pKa, pH_effect=pH_effect, T=T, L=L, eps_r=eps_r)
+            sol.solve_equations(solution)
+            return sol.P
+
+        self.compute_sol = compute_sol
+
+    def compute_W(self, D_start):
+        D = D_start
+        D_list = np.array([D_start])
+        sol = self.compute_sol(D_start, None)
+        sol_prev = sol
+        P_list = [sol.P]
+        W_list = np.array([])
+        W_curr = 1
+        W_prev = -1
+        D = self._increment_D(D)
+        while abs((W_curr-W_prev)/W_prev) < 1e-3:
+            sol = self.compute_sol(D, sol_prev)
+            D_list = np.append(D_list, D)
+            P_list += [sol.P]
+            del_W = np.sum(P_list[-2:])*(D_list[-1]-D_list[-2])
+            W_list = np.append(W_list, 0)
+            W_list += del_W
+            W_prev = W_curr
+            W_curr = W_list[0]
+            D = self._increment_D(D)
+        self.D_list = D_list[0:-1]
+        self.W_list = W_list
+
+    @staticmethod
+    def _increment_D(D):
+        if D < 5e-9:
+            return D + 0.1e-9
+        else:
+            return D + 1e-9
