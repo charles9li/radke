@@ -10,9 +10,22 @@ class _Solution:
     SM_list = None
     guess = None
 
+    K_dict = {"Li": 10**0.3,
+              "Na": 2.5*10**0.3,
+              "K": 10**2.8,
+              "Cs": 10**3}
+    R_cr_dict = {"Li": 60e-12,
+                 "Na": 98e-12,
+                 "K": 133e-12,
+                 "Cs": 169e-12}
+    R_hyd_dict = {"Li": 3.82e-10,
+                  "Na": 3.52e-10,
+                  "K": 3.31e-10,
+                  "Cs": 3.29e-10}
+
     def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
-                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80,
-                 cation=None):
+                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r_1=6,
+                 eps_r_2=30, eps_r_bulk=80, cation=None):
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
         self.z_list = np.array(z_list)
@@ -21,19 +34,58 @@ class _Solution:
         self.pH = pH
         self.pKa = pKa
         self.pH_effect = pH_effect
-        self.C1 = C1
-        self.C2 = C2
+        self.C1 = self._compute_C1(C1, cation, eps_r_1)
+        self.C2 = self._compute_C2(C2, cation, eps_r_2)
         self.T = T
         self.L = L
-        self.eps = eps_r*epsilon_0
+        self.eps_bulk = eps_r_bulk * epsilon_0
+        self.cation = cation
         if pH_effect:
             self.c_list = np.append(self.c_list, 10**-pH)
             self.K_list = np.append(self.K_list, 10**pKa)
             self.z_list = np.append(self.z_list, 1)
             self.v_list = np.append(self.v_list, True)
+        self._change_K_list(cation)
+
+    def _compute_C1(self, C1, cation, eps_r_1):
+        if cation is None:
+            return C1
+        eps_1 = eps_r_1*epsilon_0
+        if self.pH_effect:
+            self._assert_no_pH_effect()
+        else:
+            if type(cation) is str:
+                return eps_1/self.R_cr_dict[cation]
+            else:
+                R_cr_list = np.array([self.R_cr_dict[c] for c in cation])
+                R_cr = np.sum(R_cr_list*self.c_list[1:len(R_cr_list)+1]/np.sum(self.c_list[1:len(R_cr_list)+1]))
+                return eps_1/R_cr
+
+    def _compute_C2(self, C2, cation, eps_r_2):
+        if cation is None:
+            return C2
+        eps_2 = eps_r_2*epsilon_0
+        if self.pH_effect:
+            self._assert_no_pH_effect()
+        else:
+            if type(cation) is str:
+                return eps_2/self.R_cr_dict[cation]
+            else:
+                R_hyd_list = np.array([self.R_cr_dict[c] for c in cation])
+                R_hyd = np.sum(R_hyd_list*self.c_list[1:len(R_hyd_list)+1]/np.sum(self.c_list[1:len(R_hyd_list)+1]))
+                d_2 = 2*R_hyd
+                return eps_2/d_2
+
+    def _change_K_list(self, cation):
+        if cation is not None:
+            if type(cation) is str:
+                self.K_list[0] = self.K_dict[cation]
+            else:
+                for i in range(len(cation)):
+                    self.K_list[i] = self.K_dict[cation]
 
     def compute_kappa(self, rho_list):
-        return np.sqrt(e**2*np.sum(self.z_list**2*rho_list)/(self.eps*k*self.T))
+        return np.sqrt(e ** 2 * np.sum(self.z_list**2*rho_list) / (self.eps_bulk * k * self.T))
 
     def solve_equations(self, solution=None):
         """Solves equations to find potential profiles and surface charge
@@ -228,10 +280,10 @@ class _Solution:
 class Solution1Plate(_Solution):
 
     def __init__(self, c_list, K_list, z_list, v_list, C1=0.5, C2=0.5,
-                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80,
+                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r_bulk=80,
                  cation=None):
         super().__init__(c_list, K_list, z_list, v_list, 10e-9, C1=C1, C2=C2,
-                         pH=pH, pKa=pKa, pH_effect=pH_effect, T=T, L=L, eps_r=eps_r,
+                         pH=pH, pKa=pKa, pH_effect=pH_effect, T=T, L=L, eps_r_bulk=eps_r_bulk,
                          cation=cation)
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
@@ -242,7 +294,7 @@ class Solution1Plate(_Solution):
             # Compute sigma_d
             c_bulk_sum = 1000*np.sum(c_list)
             c_d_sum = 1000*np.sum(c_list*np.exp(-self.z_list*e*psi_d/(k*self.T)))
-            sigma_d = -psi_d/abs(psi_d)*np.sqrt(2*R*self.T*self.eps*(c_d_sum - c_bulk_sum))
+            sigma_d = -psi_d/abs(psi_d)*np.sqrt(2 * R * self.T * self.eps_bulk * (c_d_sum - c_bulk_sum))
 
             # Compute psi_beta and number of free sites S
             psi_beta = psi_d - sigma_d/C2
@@ -343,9 +395,9 @@ class Solution2Plate(_Solution):
         x_guess = np.linspace(0, D, size)
         if sol_guess is None:
             kappa = self.compute_kappa(rho_list)
-            psi_guess = -sigma_d_guess/(self.eps*kappa)*np.exp(-kappa*x_guess[0:size//2])
+            psi_guess = -sigma_d_guess / (self.eps_bulk * kappa) * np.exp(-kappa * x_guess[0:size // 2])
             psi_guess = np.concatenate((psi_guess, list(reversed(psi_guess))))
-            dpsi_guess = sigma_d_guess/self.eps*np.exp(-kappa*x_guess[0:size//2])
+            dpsi_guess = sigma_d_guess / self.eps_bulk * np.exp(-kappa * x_guess[0:size // 2])
             dpsi_guess = np.concatenate((dpsi_guess, list(reversed(dpsi_guess))))
         elif type(sol_guess) is tuple:
             psi_guess = np.zeros(len(x_guess))
@@ -373,11 +425,11 @@ class Solution2Plate(_Solution):
                     rho += z*rho_bulk*np.exp(-z*e*psi[0]/(k*self.T))
 
                 dpsi = psi[1]
-                d2psi = -e/self.eps*rho
+                d2psi = -e / self.eps_bulk * rho
                 return np.vstack((dpsi, d2psi))
 
             def bc(psia, psib):
-                return np.array([psia[1] - sigma_d/self.eps, psib[1] + psia[1]])
+                return np.array([psia[1] - sigma_d / self.eps_bulk, psib[1] + psia[1]])
 
             res = solve_bvp(fun, bc, x_guess, psi_guess)
             sol = res.sol
@@ -480,18 +532,18 @@ class Force:
                   "Cs": 3.29e-10}
 
     def __init__(self, c_list, K_list, z_list, v_list, C1=0.5, C2=0.5,
-                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80,
-                 A=2.2e-20, cation="Li"):
+                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r_1=6,
+                 eps_r_2=30, eps_r_bulk=80, A=2.2e-20, cation=None):
 
         def compute_sol(D, solution):
             sol = Solution2Plate(c_list, K_list, z_list, v_list, D, C1=C1, C2=C2,
-                                 pH=pH, pKa=pKa, pH_effect=pH_effect, T=T, L=L, eps_r=eps_r)
+                                 pH=pH, pKa=pKa, pH_effect=pH_effect, T=T, L=L,
+                                 eps_r_1=eps_r_1, eps_r_2=eps_r_2, eps_r_bulk=eps_r_bulk,
+                                 cation=cation)
             sol.solve_equations(solution)
             return sol
 
         self._compute_sol = compute_sol
-        self.R_cr = self.R_cr_dict[cation]
-        self.R_hyd = self.R_hyd_dict[cation]
         self.A = A
 
     def compute_F(self, D_start):
