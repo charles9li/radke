@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.constants import e, epsilon_0, k, N_A, R
 from scipy.integrate import quad, solve_bvp, trapz
@@ -12,7 +11,8 @@ class _Solution:
     guess = None
 
     def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
-                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80):
+                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80,
+                 cation=None):
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
         self.z_list = np.array(z_list)
@@ -25,7 +25,7 @@ class _Solution:
         self.C2 = C2
         self.T = T
         self.L = L
-        self.eps = eps_r * epsilon_0
+        self.eps = eps_r*epsilon_0
         if pH_effect:
             self.c_list = np.append(self.c_list, 10**-pH)
             self.K_list = np.append(self.K_list, 10**pKa)
@@ -226,6 +226,13 @@ class _Solution:
 
 
 class Solution1Plate(_Solution):
+
+    def __init__(self, c_list, K_list, z_list, v_list, C1=0.5, C2=0.5,
+                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r=80,
+                 cation=None):
+        super().__init__(c_list, K_list, z_list, v_list, 10e-9, C1=C1, C2=C2,
+                         pH=pH, pKa=pKa, pH_effect=pH_effect, T=T, L=L, eps_r=eps_r,
+                         cation=cation)
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
         def equations(guess):
