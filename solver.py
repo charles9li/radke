@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.constants import e, epsilon_0, k, N_A, R
 from scipy.integrate import quad, solve_bvp, trapz
@@ -503,7 +504,7 @@ class Force:
         W_curr = self._integrate_P(D_list, P_list)
         D = D_start
 
-        while abs((W_curr-W_prev)/W_prev) > 1e-10 or len(D_list) < 3:
+        while abs(W_curr-W_prev) > 1e-10 or len(D_list) < 3:
             print(D*1e9)
             sol = self._compute_sol(D, sol_prev)
             sol_prev = sol
