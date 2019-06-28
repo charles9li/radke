@@ -69,7 +69,8 @@ class _Solution:
             self._assert_no_pH_effect()
         else:
             if type(cation) is str:
-                return eps_2/self.R_cr_dict[cation]
+                d_2 = 2*self.R_hyd_dict[cation]
+                return eps_2/d_2
             else:
                 R_hyd_list = np.array([self.R_cr_dict[c] for c in cation])
                 R_hyd = np.sum(R_hyd_list*self.c_list[1:len(R_hyd_list)+1]/np.sum(self.c_list[1:len(R_hyd_list)+1]))
@@ -234,7 +235,11 @@ class _Solution:
 
     def _create_c_list_init(self, solution):
         if solution is None:
-            self._c_list_init = np.array([1e-3] * len(self.c_list[self.v_list]))
+            if self.pH_effect:
+                self._c_list_init = np.array([1e-3] * (len(self.c_list[self.v_list])-1))
+                self._c_list_init = np.append(self._c_list_init, 10**-5.8)
+            else:
+                self._c_list_init = np.array([1e-3] * len(self.c_list[self.v_list]))
             self._c_list_init = np.append(np.sum(self._c_list_init), self._c_list_init)
         else:
             self._c_list_init = solution.c_list
@@ -242,7 +247,11 @@ class _Solution:
 
     def _create_K_list_init(self, solution):
         if solution is None:
-            self._K_list_init = np.array([1e2] * len(self.K_list))
+            if self.pH_effect:
+                self._K_list_init = np.array([1e2] * (len(self.K_list)-1))
+                self._K_list_init = np.append(self._K_list_init, 10**5.3)
+            else:
+                self._K_list_init = np.array([1e2] * len(self.K_list))
         else:
             self._K_list_init = solution.K_list
         self._K_list_index = 0

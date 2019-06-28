@@ -1,9 +1,10 @@
-from radii import *
-from scipy.constants import epsilon_0, k
-from solver import Solution_1plate
+import pandas as pd
+from old.radii import *
+from scipy.constants import epsilon_0
+from solver_old import Solution_1plate
+from solver import Solution1Plate
 from solvers import *
 import numpy as np
-import pandas as pd
 
 
 ##############
@@ -109,8 +110,9 @@ if data_scales_fig2 or data_all:
 # OSMAN #
 #########
 
-data_osman = False
+data_osman = True
 if data_osman or data_all:
+    pH = 5.8
     cCl_list = [0.67976, 0.6435, 0.66163]
     Gamma_Li0_list = [459.74, 468.8737, 608.0727]
     # Gamma_Li0_list = [459.74, 468.8737, 465]
@@ -118,6 +120,9 @@ if data_osman or data_all:
     K_list_osman = [K_Na, K_K, K_Cs]
     C1_list_osman = [C1_Na, C1_K, C1_Cs]
     C2_list_osman = [C2_Na, C2_K, C2_Cs]
+
+    sol_prev = None
+
     i = 0
     for fig_index in [1, 2, 4]:
         cCl = cCl_list[i]
@@ -133,10 +138,12 @@ if data_osman or data_all:
                       index=False)
 
         frac_A_list = np.linspace(0.0001, 0.1, 20)
-        frac_A_list = np.append(frac_A_list, np.linspace(0.11, 0.99, 15))
+        frac_A_list = np.append(frac_A_list, np.linspace(0.11, 0.99, 50))
         frac_ads_list = np.zeros(len(frac_A_list))
+
         j = 0
         for frac_A in frac_A_list:
+            print(str(fig_index) + " " + str(j))
             K_ads = K_list_osman[i]
             C1 = C1_list_osman[i]
             C2 = C2_list_osman[i]
@@ -146,13 +153,19 @@ if data_osman or data_all:
             K_list = np.array([K_ads, K_Li, 10**pKa])
             z_list = np.array([-1, 1, 1, 1])
             v_list = np.array([False, True, True, True])
-            sol = Solution_1plate(c_list, K_list, z_list, v_list,
-                                  pH_effect=False, C_1=C1, C_2=C2)
+            # sol = Solution_1plate(c_list, K_list, z_list, v_list,
+            #                       pH_effect=False, C_1=C1, C_2=C2)
+            sol = Solution1Plate(c_list, K_list, z_list, v_list, 10e-9, pH_effect=False, C1=C1, C2=C2)
+
             # sol.bound_diffuse()
             # ads_tot = np.sum(sol.SM_list[0:2]) + np.sum(sol.bound_diffuse_list[1:-1])
             # frac_ads_list[j] = (sol.SM_list[0] + sol.bound_diffuse_list[1])/ads_tot
 
-            sol.solver_sigma()
+            # sol.solver_sigma()
+            sol.solve_equations(sol_prev)
+
+            sol_prev = sol
+
             frac_ads_list[j] = sol.SM_list[0]/(np.sum(sol.SM_list[0:2]))
             j += 1
 
@@ -294,30 +307,27 @@ if data_sigma_beta_H:
     df.to_csv(path_or_buf='data_figures/sigma_beta_conc_H.csv',
               index=False)
 
-data_grahame = True
+data_grahame = False
 if data_grahame:
     salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
     i = 0
     for salt in salts:
+        c = 1e-3
         K_ads = K_ads_list[i]
         C1 = C1_list[i]
         C2 = C2_list[i]
-        c_list = np.logspace(-5, -1, 25)
-        sigma_d_list = np.zeros(len(c_list))
-        sigma_d_grahame_list = np.zeros(len(c_list))
+        D_list = np.linspace(0.1, 50, 25)*1e-9
+        sigma_d_list = np.zeros(len(D_list))
+        sigma_d_grahame_list = np.zeros(len(D_list))
         j = 0
-        for c in c_list:
-            c_list1 = np.array([c+10**-pH, c, 10**-pH])
-            K_list = np.array([K_ads, 10**pKa])
-            z_list = np.array([-1, 1, 1])
-            v_list = np.array([False, True, True])
-            sol = Solution_1plate(c_list1, K_list, z_list, v_list,
-                                  pH_effect=False, C_1=C1, C_2=C2)
-            sol.solver_sigma()
+        for D in D_list:
+            sol = solver_2plate_2cation_ads(c, 10**-pH,
+                                            K_ads, 10**pKa, D,
+                                            C_1=C1, C_2=C2)
             sigma_d_list[j] = sol.sigma_d
-            sigma_d_grahame_list[j] = -0.117*np.sinh(sol.psi_d*1000/51.4)*np.sqrt(c)
+            sigma_d_grahame_list[j] = -np.sqrt(8*eps_bulk*k*T*N_A*1000*c)*np.sinh(e*sol.psi[2]/(2*k*T))
             j += 1
-        df = pd.DataFrame({'c': c_list,
+        df = pd.DataFrame({'D': D_list*1e9,
                            'sigma_d': sigma_d_list,
                            'sigma_d_grahame': sigma_d_grahame_list})
         df.to_csv(path_or_buf='data_figures/grahame_'+salt+'.csv',

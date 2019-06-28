@@ -8,18 +8,17 @@ This module contains a number of solvers for cases including 1- and 2-plate and
 """
 
 # numpy and scipy
-import numpy as np
-from scipy.optimize import fsolve, root
-from scipy.integrate import solve_bvp
-from scipy.interpolate import interp1d
 
 # for detecting overflow errors during iteration
-import warnings
 
 # solution classes, constants, and helper function
-from class_Solution import *
-from constants import *
-from helper import *
+from old.helper import *
+from old.constants import *
+from scipy.integrate import solve_bvp
+from old.class_Solution import *
+from scipy.interpolate import interp1d
+import warnings
+from scipy.optimize import fsolve
 
 def solver_1plate_1cation_ads_pH(c, pH, K_ads, pKa, **kwargs):
 	
@@ -382,9 +381,13 @@ def solver_1plate_2cation_ads_pH(c_1, c_2, pH, K_ads_1, K_ads_2, pKa, eng, **kwa
 
 def solver_2plate_1cation_ads(c, K_ads, D, **kwargs):
 
-	# if kwargs is not None:
-	# 	for key, value in kwargs.iteritems():
-	# 		if key in parameter_string_list:
+	if kwargs is not None:
+		for key, value in kwargs.items():
+			if key in parameter_string_list:
+				parameter[key] = value
+
+	C_1 = parameter['C_1']
+	C_2 = parameter['C_2']
 
 	# Solves for potential and ion distrubutions in diffuse region
 	def solver(sigma_d, c, psi_guess=False):
@@ -627,7 +630,7 @@ def solver_2plate_2cation_ads(c_1, c_2, K_ads_1, K_ads_2, D, **kwargs):
 					c_tot_end = c_tot_curr
 					good = True
 					print(
-						'{0:.1e}\t\t{1:.1e}\t\t{2:.4}\t'.format(c_1, c_2, D*1e9)+
+						'{0:.1e}\t\t{1:.1e}\t\t{2:.4}\t'.format(c_1, c_2, D*1e9) +
 						'{0:.18}\t\t{1}'.format(c_tot_end, sigma_d_guess))
 				except Warning:
 					c_tot_curr = (c_tot_curr + c_tot_end)/2

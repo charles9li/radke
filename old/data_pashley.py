@@ -4,14 +4,16 @@ import csv
 
 # Class for storing data
 class PashleyData:
-    def __init__(self, c, D, FR):
+    def __init__(self, c, D, FR, c_str=None):
         self.c = c
         self.D = D
         self.FR = FR
+        self.c_str = c_str
 
 
 # Figure 1
 c_list = ['1e-4', '1e-3', '1e-2', '6e-2']
+c_str_list = ['$10^{-4}$', '$10^{-3}$']
 pashley_fig1_data = []
 for c in c_list:
     with open('data/pashley_fig1_data_' + c + '.csv') as csvfile:
@@ -27,6 +29,7 @@ for c in c_list:
 
 # Figure 2
 c_list = ['4e-5', '1e-4', '1e-3', '1e-2']
+c_str_list = ['$4\cdot10^{-5}$', '$10^{-4}$']
 pashley_fig2_data = []
 for c in c_list:
     with open('data/pashley_fig2_data_' + c + '.csv') as csvfile:
@@ -42,7 +45,9 @@ for c in c_list:
 
 # Figure 3
 c_list = ['4e-5', '3e-4', '1e-3']
+c_str_list = ['$4\cdot10^{-5}$', '$3\cdot10^{-4}$', '$10^{-3}$']
 pashley_fig3_data = []
+i = 0
 for c in c_list:
     with open('data/pashley_fig3_data_' + c + '.csv') as csvfile:
         datafile = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -53,7 +58,8 @@ for c in c_list:
             FR += [float(row[1])]
     D = np.array(D)
     FR = np.array(FR)
-    pashley_fig3_data += [PashleyData(float(c), D, FR)]
+    pashley_fig3_data += [PashleyData(float(c), D, FR, c_str_list[i])]
+    i += 1
 
 # Figure 4
 c_list = ['4e-5', '1e-4', '1e-3']

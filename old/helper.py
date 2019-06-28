@@ -10,6 +10,9 @@ import os, sys
 from scipy.integrate import simps
 from scipy.optimize import root
 from solvers import *
+import numpy as np
+from scipy.constants import e, k
+from constants import *
 
 ##########
 # APPEND #
