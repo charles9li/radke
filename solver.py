@@ -531,6 +531,15 @@ class Solution2Plate(_Solution):
 
 class Force:
 
+    R_cr_dict = {"Li": 60e-12,
+                 "Na": 98e-12,
+                 "K": 133e-12,
+                 "Cs": 169e-12}
+    R_hyd_dict = {"Li": 3.82e-10,
+                  "Na": 3.52e-10,
+                  "K": 3.31e-10,
+                  "Cs": 3.29e-10}
+
     def __init__(self, c_list, K_list, z_list, v_list, C1=0.5, C2=0.5,
                  pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r_1=6,
                  eps_r_2=30, eps_r_bulk=80, A=2.2e-20, cation=None):
@@ -544,6 +553,8 @@ class Force:
             return sol
 
         self._compute_sol = compute_sol
+        self.R_cr = self.R_cr_dict[cation]
+        self.R_hyd = self.R_hyd_dict[cation]
         self.A = A
 
     def compute_F(self, D_start):
