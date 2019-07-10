@@ -14,6 +14,7 @@ c_list_list = [['6e-2', '1e-2', '1e-3', '1e-4'],
                ['1e-2', '1e-3', '1e-4', '4e-5'],
                ['1e-3', '3e-4', '4e-5'],
                ['1e-3', '1e-4', '4e-5']]
+pH_list = [5.4, 5.7, 5.7, 5.8]
 xlim_list = [(-1, 40), (-1, 40), (-1, 40), (-1, 40)]
 ylim_list = [(1e2, 1e5), (1e2, 1e4), (1e2, 1e5), (1e2, 2e4)]
 
@@ -22,6 +23,7 @@ for i in range(len(fig_index_list)):
     fig_index = str(fig_index_list[i])
     cation = cation_list[i]
     c_list = c_list_list[i]
+    pH = pH_list[i]
     xlim = xlim_list[i]
     ylim = ylim_list[i]
     plt.figure(cation + 'Cl')
@@ -56,6 +58,6 @@ for i in range(len(fig_index_list)):
     plt.ylim(ylim)
     plt.legend(frameon=False,
                title='Conc [M]')
-    plt.text(15, 7e3, cation + 'Cl')
+    plt.text(12, 3e3, cation + 'Cl\n' + r'pH$=%.1f \pm0.3$' % pH)
     plt.tight_layout()
 plt.show()
