@@ -1,9 +1,9 @@
 import numpy as np
 import warnings
-from constants import *
+from old.constants import *
 from scipy.constants import e, k, epsilon_0
-from scipy.optimize import root, minimize
-from scipy.integrate import odeint, simps, solve_bvp
+from scipy.optimize import root
+from scipy.integrate import simps
 
 
 class Solution_1plate:
@@ -26,6 +26,7 @@ class Solution_1plate:
         self.psi_beta = None
         self.psi_d = None
         self.SM_list = None
+        self.SH = None
         if pH_effect:
             self.c_list = np.append(self.c_list, 10**-pH)
             self.K_list = np.append(self.K_list, 10**pKa)

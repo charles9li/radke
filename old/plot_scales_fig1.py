@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import csv
 import itertools
-from solver_old import *
+from old.solver_old import *
 
 # Parameters
 salt_list = ['LiCl', 'NaCl', 'KCl', 'CsCl']

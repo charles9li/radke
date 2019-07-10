@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import csv
 import itertools
 from scipy.optimize import least_squares
-from solvers import *
+from old.solvers import *
 from old.constants import *
 
 # Parameters

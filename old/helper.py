@@ -6,7 +6,7 @@ This module contains a list of helper functions.
 
 """
 
-from solvers import *
+from old.solvers import *
 import numpy as np
 from scipy.constants import e, k
 from old.constants import *

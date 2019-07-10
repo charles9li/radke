@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import itertools
-from solver_old import *
+from old.solver_old import *
 from scipy.interpolate import interp1d
 
 # Parameters

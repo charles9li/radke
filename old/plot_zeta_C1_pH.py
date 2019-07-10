@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import itertools
-from solvers import *
+from old.solvers import *
 
 # Parameters
 c_list = 10**np.linspace(-5, -1, 10)

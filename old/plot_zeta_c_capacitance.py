@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import itertools
-from solver_old import *
+from old.solver_old import *
 
 # Parameters
 log10c_list = np.linspace(-5, 0, 10)
