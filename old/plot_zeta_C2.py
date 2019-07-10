@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import itertools
-from solver import *
+from solver_old import *
 
 # Parameters
 c = 1e-3
