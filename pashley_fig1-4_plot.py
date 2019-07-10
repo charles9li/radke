@@ -54,5 +54,8 @@ for i in range(len(fig_index_list)):
     plt.ylabel('F/R [$\mu$N m$^{-1}$]')
     plt.xlim(xlim)
     plt.ylim(ylim)
+    plt.legend(frameon=False,
+               title='Conc [M]')
+    plt.text(15, 7e3, cation + 'Cl')
     plt.tight_layout()
 plt.show()
