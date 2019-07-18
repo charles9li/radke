@@ -124,7 +124,23 @@ class _Solution:
             guess_next = self._guess_next(guess_list)
             guess = self._solver_init(guess_next)
             guess_list = self._add_guess(guess_list, guess)
+            self._print_continuation(parameter_str)
+        print()
         return guess
+
+    def _print_continuation(self, parameter_str):
+        parameter_val_str = None
+        if parameter_str == 'c_list':
+            parameter_val_str = str(self._c_list_init)
+        elif parameter_str == 'K_list':
+            parameter_val_str = str(self._K_list_init)
+        elif parameter_str == 'C1':
+            parameter_val_str = str(self._C1_init)
+        elif parameter_str == 'C2':
+            parameter_val_str = str(self._C2_init)
+        elif parameter_str == 'D':
+            parameter_val_str = str(self._D_init)
+        print(parameter_str + " " * (10 - len(parameter_str)) + parameter_val_str, end='\r')
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
         pass
@@ -370,6 +386,10 @@ class Solution1Plate(_Solution):
 
     def _create_guess(self, solution):
         if solution is None:
+            psi_d_poly = None
+            SM_poly = None
+            num_cat = None
+
             if self.pH_effect:
                 self._assert_no_pH_effect()
             else:
