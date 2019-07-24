@@ -10,10 +10,10 @@ class _Solution:
     SM_list = None
     guess = None
 
-    K_dict = {"Li": 10**0.3,
-              "Na": 2.5*10**0.3,
-              "K": 10**2.8,
-              "Cs": 10**3}
+    K_dict = {"Li": 10 ** 0.3,
+              "Na": 2.5 * 10 ** 0.3,
+              "K": 10 ** 2.8,
+              "Cs": 10 ** 3}
     R_cr_dict = {"Li": 60e-12,
                  "Na": 98e-12,
                  "K": 133e-12,
@@ -26,23 +26,23 @@ class _Solution:
     def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
                  pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r_1=6,
                  eps_r_2=30, eps_r_bulk=80, cation=None):
+        self.pH_effect = pH_effect
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
         self.z_list = np.array(z_list)
         self.v_list = np.array(v_list)
         self.D = D
-        self.pH = pH
-        self.pKa = pKa
-        self.pH_effect = pH_effect
         self.C1 = self._compute_C1(C1, cation, eps_r_1)
         self.C2 = self._compute_C2(C2, cation, eps_r_2)
+        self.pH = pH
+        self.pKa = pKa
         self.T = T
         self.L = L
         self.eps_bulk = eps_r_bulk * epsilon_0
         self.cation = cation
         if pH_effect:
-            self.c_list = np.append(self.c_list, 10**-pH)
-            self.K_list = np.append(self.K_list, 10**pKa)
+            self.c_list = np.append(self.c_list, 10 ** -pH)
+            self.K_list = np.append(self.K_list, 10 ** pKa)
             self.z_list = np.append(self.z_list, 1)
             self.v_list = np.append(self.v_list, True)
         self._change_K_list(cation)
