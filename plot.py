@@ -1,8 +1,8 @@
-from line_marker import *
-from radii import *
-from solver import *
-import matplotlib.pyplot as plt
 import seaborn as sns
+from line_marker import *
+from old.radii import *
+from old.solver_old import *
+import matplotlib.pyplot as plt
 import pandas as pd
 context = "talk"
 sns.set_context(context)
@@ -185,6 +185,8 @@ if plot_israelachvili or plot_all:
                  color='C'+str(i),
                  label='_nolegend_')
         i += 1
+    # plt.xlim((-2, 130))
+    # plt.ylim((1e1, 1e4))
     plt.legend(frameon=False,
                ncol=2,
                title='conc [mol L$^{-1}$]')
@@ -198,7 +200,9 @@ if plot_israelachvili or plot_all:
 # DONALDSON #
 #############
 
-plot_donaldson = False
+plot_donaldson = True
+markers = marker_cycle()
+lines = line_cycle()
 if plot_donaldson or plot_all:
     for pH in [3, 10]:
         plt.figure('donaldson_pH' + str(pH))
@@ -212,14 +216,20 @@ if plot_donaldson or plot_all:
                             marker=next(markers),
                             color='C' + str(i),
                             label=c)
-            df_model = pd.read_csv(filepath_or_buffer='data_figures/donaldson_pH'+str(pH)+'_'+str(c)+'mM_model.csv')
-            plt.plot(df_model.get('D'), df_model.get('F/R'),
-                     linestyle=next(lines),
-                     color='C' + str(i),
-                     label='_nolegend_')
+            # df_model = pd.read_csv(filepath_or_buffer='data_figures/donaldson_pH'+str(pH)+'_'+str(c)+'mM_model.csv')
+            # plt.plot(df_model.get('D'), df_model.get('F/R'),
+            #          linestyle=next(lines),
+            #          color='C' + str(i),
+            #          label='_nolegend_')
             i += 1
         plt.legend(frameon=False,
                    title='conc [mM]')
+        if pH == 3:
+            plt.xlim((0, 25))
+            plt.text(5, 7e-2, 'pH = 3')
+        else:
+            plt.xlim((0, 40))
+            plt.text(20, 10, 'pH = 10')
         plt.xlabel('D [nm]')
         plt.ylabel('F/R [mN/m]')
         plt.tight_layout()
@@ -331,14 +341,14 @@ if plot_sigma_beta_conc_H:
     plt.text(1e-3, 0.5, 'LiCl\npH=5.8')
     plt.legend(frameon=False)
 
-plot_grahame = True
+plot_grahame = False
 if plot_grahame or plot_all:
     plt.figure('grahame')
     salts = ['LiCl', 'NaCl', 'KCl', 'CsCl']
     i = 0
     for salt in salts:
         df = pd.read_csv(filepath_or_buffer='data_figures/grahame_'+salt+'.csv')
-        plt.plot(df.get('c'), df.get('sigma_d')/0.32,
+        plt.plot(df.get('D'), df.get('sigma_d')/0.32,
                  color='C'+str(i),
                  label=salt)
         i += 1
@@ -346,7 +356,7 @@ if plot_grahame or plot_all:
     i = 0
     for salt in salts:
         df = pd.read_csv(filepath_or_buffer='data_figures/grahame_'+salt+'.csv')
-        plt.plot(df.get('c'), df.get('sigma_d_grahame')/0.32,
+        plt.plot(df.get('D'), df.get('sigma_d_grahame')/0.32,
                  color='C'+str(i),
                  linestyle='--',
                  label='(Grahame eqn) (model)')
@@ -354,8 +364,7 @@ if plot_grahame or plot_all:
 
     plt.legend(frameon=False,
                ncol=2)
-    plt.xscale('log')
-    plt.xlabel('c [mol dm$^{-3}$]')
+    plt.xlabel('D [nm]')
     plt.ylabel('$\sigma_d$ / |$\sigma_0$|')
     plt.tight_layout()
 

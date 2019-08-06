@@ -1,9 +1,9 @@
 import pandas as pd
 from old.radii import *
 from scipy.constants import epsilon_0
-from solver_old import Solution_1plate
+from old.solver_old import Solution_1plate
 from solver import Solution1Plate
-from solvers import *
+from old.solvers import *
 import numpy as np
 
 
