@@ -83,3 +83,10 @@ Formatting
 - 14pt font for clay
 
 
+4/15
+- sigma_d/sigma_0 vs K
+	- have pts for each ion
+	- at intermediate conc (e.g. 10^-4)
+	- H+ vs M+
+- pH error for force curve
+
