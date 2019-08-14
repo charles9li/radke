@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.constants import e, epsilon_0, k, N_A, R
-from scipy.integrate import quad, solve_bvp, trapz
 from scipy.interpolate import interp1d
+from scipy.integrate import quad, solve_bvp, trapz
 from scipy.optimize import fsolve, root
 
 
@@ -83,7 +83,7 @@ class _Solution:
                 self.K_list[0] = self.K_dict[cation]
             else:
                 for i in range(len(cation)):
-                    self.K_list[i] = self.K_dict[cation]
+                    self.K_list[i] = self.K_dict[cation[i]]
 
     def compute_kappa(self, rho_list):
         return np.sqrt(e ** 2 * np.sum(self.z_list**2*rho_list) / (self.eps_bulk * k * self.T))
