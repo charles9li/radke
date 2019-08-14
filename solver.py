@@ -52,7 +52,12 @@ class _Solution:
             return C1
         eps_1 = eps_r_1*epsilon_0
         if self.pH_effect:
-            self._assert_no_pH_effect()
+            if type(cation) is str:
+                return eps_1/self.R_cr_dict[cation]
+            else:
+                R_cr_list = np.array([self.R_cr_dict[c] for c in cation])
+                R_cr = np.sum(R_cr_list*self.c_list[1:len(R_cr_list)+1]/np.sum(self.c_list[1:len(R_cr_list)+1]))
+                return eps_1/R_cr
         else:
             if type(cation) is str:
                 return eps_1/self.R_cr_dict[cation]
@@ -66,7 +71,14 @@ class _Solution:
             return C2
         eps_2 = eps_r_2*epsilon_0
         if self.pH_effect:
-            self._assert_no_pH_effect()
+            if type(cation) is str:
+                d_2 = 2*self.R_hyd_dict[cation]
+                return eps_2/d_2
+            else:
+                R_hyd_list = np.array([self.R_cr_dict[c] for c in cation])
+                R_hyd = np.sum(R_hyd_list*self.c_list[1:len(R_hyd_list)+1]/np.sum(self.c_list[1:len(R_hyd_list)+1]))
+                d_2 = 2*R_hyd
+                return eps_2/d_2
         else:
             if type(cation) is str:
                 d_2 = 2*self.R_hyd_dict[cation]
@@ -386,12 +398,20 @@ class Solution1Plate(_Solution):
 
     def _create_guess(self, solution):
         if solution is None:
-            psi_d_poly = None
-            SM_poly = None
-            num_cat = None
-
             if self.pH_effect:
-                self._assert_no_pH_effect()
+                num_cat = len(self.c_list) - 2
+                psi_d_poly = np.poly1d([-0.06682361, 0.16257741,
+                                        -0.14451976, 0.05710006,
+                                        -0.00943752])
+                SM_poly = np.poly1d([-7.19062004e+17, 1.83332403e+18,
+                                     -1.78817799e+18, 9.06035496e+17,
+                                     2.97346101e+17])
+                SH_poly = np.poly1d([5.89869591e+17, -1.50684919e+18,
+                                     1.47781243e+18, -7.65105121e+17,
+                                     1.66578958e+18])
+                guess = np.array([SM_poly(num_cat * 0.1)] * num_cat)
+                guess = np.append(psi_d_poly(num_cat * 0.1), guess)
+                guess = np.append(guess, SH_poly(num_cat * 0.1))
             else:
                 num_cat = len(self.c_list) - 1
                 psi_d_poly = np.poly1d([3.25590388e+09, -1.08057231e+08,
@@ -401,8 +421,8 @@ class Solution1Plate(_Solution):
                                      -1.21054552e+31,  1.19304587e+29,
                                      -6.90913117e+26,  2.38311837e+24,
                                      -4.72002436e+21,  4.82749852e+18])
-            guess = np.array([SM_poly(num_cat * 1e-3)] * num_cat)
-            guess = np.append(psi_d_poly(num_cat * 1e-3), guess)
+                guess = np.array([SM_poly(num_cat * 1e-3)] * num_cat)
+                guess = np.append(psi_d_poly(num_cat * 1e-3), guess)
             guess = self._solver(guess, self._c_list_init, self._K_list_init,
                                  self._C1_init, self._C2_init, self._D_init)
         else:
