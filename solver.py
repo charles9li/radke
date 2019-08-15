@@ -106,6 +106,9 @@ class _Solution:
         self.pKa = pKa
         self.T = T
         self.L = L
+        self.eps_r_1 = eps_r_1
+        self.eps_r_2 = eps_r_2
+        self.eps_r_bulk = eps_r_bulk
         self.eps_bulk = eps_r_bulk * epsilon_0
         self.cation = cation
         if pH_effect:
@@ -247,6 +250,8 @@ class _Solution:
 
         """
 
+        # Prints header containing parameter information
+
         # Initialize starting point for continuation
         self._create_c_list_init(solution)
         self._create_K_list_init(solution)
@@ -276,8 +281,46 @@ class _Solution:
             guess = self._solver_init(guess_next)
             guess_list = self._add_guess(guess_list, guess)
             self._print_continuation(parameter_str)
-        print()
         return guess
+
+    def _print_header(self):
+        self._print_header_pH()
+        self._print_header_T_L()
+        self._print_header_eps()
+        self._print_header_c_K()
+        self._print_header_z_v()
+        self._print_header_D_C()
+
+    def _print_header_pH(self):
+        string = "pH_effect : {0}".format(self.pH_effect)
+        if self.pH_effect:
+            string += ", pH = {0:.1f}, pKa = {1:.1f}".format(self.pH, self.pKa)
+        print(string)
+
+    def _print_header_T_L(self):
+        print("T = {0:.0f} K, L = {1:.1e} 1/m2".format(self.T, self.L))
+
+    def _print_header_eps(self):
+        string = "eps_r_1 = {0:.0f}".format(self.eps_r_1)
+        string += ", eps_r_2 = {0:.0f}".format(self.eps_r_2)
+        string += ", eps_r_bulk = {0:.0f}".format(self.eps_r_bulk)
+        print(string)
+
+    def _print_header_c_K(self):
+        string = "c_list : {0} M".format(self.c_list)
+        string += "K_list : {0} ".format(self.K_list)
+        print(string)
+
+    def _print_header_z_v(self):
+        string = "z_list : {0}".format(self.z_list)
+        string += "v_list : {0}".format(self.v_list)
+        print(string)
+
+    def _print_header_D_C(self):
+        string = "D = {0:.1f} nm".format(self.D*1e9)
+        string += ", C1 = {0:.2f} F/m2".format(self.C1)
+        string += ", C2 = {0:.2f} F/m2".format(self.C2)
+        print(string)
 
     def _print_continuation(self, parameter_str):
         parameter_val_str = None
@@ -338,8 +381,6 @@ class _Solution:
             return_bool = self._C2_init == self.C2
         elif parameter_str == 'D':
             return_bool = self._D_init == self.D
-        if return_bool:
-            print(parameter_str + " success")
         return return_bool
 
     #
