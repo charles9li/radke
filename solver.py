@@ -71,12 +71,6 @@ class _Solution:
         if type(cation) is str:
             return self.R_cr_dict[cation]
 
-    def _compute_R_cr_avg(self, cation):
-        if type(cation) is str:
-            return self.R_cr_dict[cation]
-        else:
-            return
-
     def _compute_C2(self, C2, cation, eps_r_2):
         if cation is None:
             return C2
@@ -99,6 +93,28 @@ class _Solution:
                 R_hyd = np.sum(R_hyd_list*self.c_list[1:len(R_hyd_list)+1]/np.sum(self.c_list[1:len(R_hyd_list)+1]))
                 d_2 = 2*R_hyd
                 return eps_2/d_2
+
+    def _compute_R_cr_avg(self, cation):
+        if type(cation) is str:
+            self._check_cation_R_cr(cation)
+            return self.R_cr_dict[cation]
+        else:
+            R_cr_list = []
+            for c in cation:
+                self._check_cation_R_cr(c)
+                R_cr_list += [self.R_cr_dict[c]]
+            return np.mean(R_cr_list)
+
+    def _compute_R_hyd_avg(self, cation):
+        if type(cation) is str:
+            self._check_cation_R_hyd(cation)
+            return self.R_hyd_dict[cation]
+        else:
+            R_hyd_list = []
+            for c in cation:
+                self._check_cation_R_hyd(c)
+                R_hyd_list += [self.R_hyd_dict[c]]
+            return np.mean(R_hyd_list)
 
     def _change_K_list(self, cation):
         if cation is not None:
