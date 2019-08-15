@@ -9,7 +9,12 @@ class _Solution:
     """
     Parent class for Solution1Plate and Solution2Plate classes.
 
-    Contains methods for continuation on the following parameters:
+    To solve equations, a _Solution class is first instantiated with the
+    desired parameters. The solve_equations method of the newly-instantiated
+    _Solution object is called to solve relevant equations. A 3-pt quadratic
+    continuation is employed to aid in convergence.
+
+    Runs continuation on the following parameters:
         1. concentrations                           (c_list)
         2. dissociation constants                   (K_list)
         3. capacitance of inner Helmholtz region    (C1)
