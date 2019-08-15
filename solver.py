@@ -251,6 +251,7 @@ class _Solution:
         """
 
         # Prints header containing parameter information
+        self._print_header()
 
         # Initialize starting point for continuation
         self._create_c_list_init(solution)
@@ -269,6 +270,7 @@ class _Solution:
         guess = self._continuation('C1', guess, 0.1, False)
         guess = self._continuation('C2', guess, 0.1, False)
         guess = self._continuation('D', guess, 1e-9, False)
+        print()
 
         self._solver(guess, self.c_list, self.K_list, self.C1, self.C2, self.D, get_values=True)
         self.guess = guess
@@ -280,15 +282,17 @@ class _Solution:
             guess_next = self._guess_next(guess_list)
             guess = self._solver_init(guess_next)
             guess_list = self._add_guess(guess_list, guess)
-            self._print_continuation(parameter_str)
+        print("{0} continuation done".format(parameter_str))
         return guess
 
     def _print_header(self):
         self._print_header_pH()
         self._print_header_T_L()
         self._print_header_eps()
-        self._print_header_c_K()
-        self._print_header_z_v()
+        self._print_header_c()
+        self._print_header_K()
+        self._print_header_z()
+        self._print_header_v()
         self._print_header_D_C()
 
     def _print_header_pH(self):
@@ -306,14 +310,19 @@ class _Solution:
         string += ", eps_r_bulk = {0:.0f}".format(self.eps_r_bulk)
         print(string)
 
-    def _print_header_c_K(self):
+    def _print_header_c(self):
         string = "c_list : {0} M".format(self.c_list)
-        string += "K_list : {0} ".format(self.K_list)
         print(string)
 
-    def _print_header_z_v(self):
+    def _print_header_K(self):
+        string = "K_list : {0}".format(self.K_list)
+
+    def _print_header_z(self):
         string = "z_list : {0}".format(self.z_list)
-        string += "v_list : {0}".format(self.v_list)
+        print(string)
+
+    def _print_header_v(self):
+        string = "v_list : {0}".format(self.v_list)
         print(string)
 
     def _print_header_D_C(self):
@@ -321,20 +330,7 @@ class _Solution:
         string += ", C1 = {0:.2f} F/m2".format(self.C1)
         string += ", C2 = {0:.2f} F/m2".format(self.C2)
         print(string)
-
-    def _print_continuation(self, parameter_str):
-        parameter_val_str = None
-        if parameter_str == 'c_list':
-            parameter_val_str = str(self._c_list_init)
-        elif parameter_str == 'K_list':
-            parameter_val_str = str(self._K_list_init)
-        elif parameter_str == 'C1':
-            parameter_val_str = str(self._C1_init)
-        elif parameter_str == 'C2':
-            parameter_val_str = str(self._C2_init)
-        elif parameter_str == 'D':
-            parameter_val_str = str(self._D_init)
-        print(parameter_str + " " * (10 - len(parameter_str)) + parameter_val_str, end='\r')
+        print("-"*len(string))
 
     def _solver(self, guess, c_list, K_list, C1, C2, D, get_values=False):
         pass
