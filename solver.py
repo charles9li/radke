@@ -77,6 +77,10 @@ class _Solution:
                   "K":  3.31e-10,
                   "Cs": 3.29e-10}
 
+    ###############
+    # Constructor #
+    ###############
+
     def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
                  pH_effect=True, pH=5.8, pKa=5.3, T=298, L=2e18, eps_r_1=6,
                  eps_r_2=30, eps_r_bulk=80, cation=None):
@@ -84,7 +88,6 @@ class _Solution:
         Initialize a _Solution instance.
 
         """
-
         self.pH_effect = pH_effect
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
@@ -107,7 +110,19 @@ class _Solution:
             self.v_list = np.append(self.v_list, True)
         self._change_K_list(cation)
 
+    ###############
+    # Capacitance #
+    ###############
+
     def _compute_C1(self, C1, cation, eps_r_1):
+        """
+        Computes capacitance of inner Helmholtz region.
+
+        If cation(s) are specified, then C1 is computed using crystallographic
+        radius and the relative permitivitty of the inner Helmholtz region. If
+        cation is None, then the specified value for C1 is used.
+
+        """
         if cation is None:
             return C1
         eps_1 = eps_r_1*epsilon_0
@@ -115,10 +130,23 @@ class _Solution:
         return eps_1/d1
 
     def _compute_d1(self, cation):
+        """
+        Computes width of inner Helmholtz region. Uses the average
+        crystallographic radius.
+
+        """
         R_cr_avg = self._compute_R_cr_avg(cation)
         return R_cr_avg
 
     def _compute_C2(self, C2, cation, eps_r_2):
+        """
+        Computes capacitance of outer Helmholtz region.
+
+        If cation(s) are specified, then C1 is computed using hydrated radius
+        and the relative permitivitty of the outer Helmholtz region. If cation
+        is None, then the specified value for C1 is used.
+
+        """
         if cation is None:
             return C2
         eps_2 = eps_r_2*epsilon_0
@@ -126,10 +154,20 @@ class _Solution:
         return eps_2/d2
 
     def _compute_d2(self, cation):
+        """
+        Computes width of outer Helmholtz region. Uses the average hydrated
+        radius.
+
+        """
         R_hyd_avg = self._compute_R_hyd_avg(cation)
         return 2*R_hyd_avg
 
     def _compute_R_cr_avg(self, cation):
+        """
+        Computes the average crystallographic radius of the cation(s)
+        specified.
+
+        """
         if type(cation) is str:
             self._check_cation_R_cr(cation)
             return self.R_cr_dict[cation]
@@ -141,6 +179,10 @@ class _Solution:
             return np.mean(R_cr_list)
 
     def _compute_R_hyd_avg(self, cation):
+        """
+        Computes the average hydrated radius of the cation(s) specified.
+
+        """
         if type(cation) is str:
             self._check_cation_R_hyd(cation)
             return self.R_hyd_dict[cation]
@@ -151,6 +193,30 @@ class _Solution:
                 R_hyd_list += [self.R_hyd_dict[c]]
             return np.mean(R_hyd_list)
 
+    def _check_cation_R_cr(self, cation):
+        """
+        Raises AssertionError if value for crystallographic radius does not
+        exist for specified cation.
+
+        """
+        message = "'" + cation + "' has no available value for " \
+                                 "crystallographic radius value."
+        assert cation in self.R_cr_dict.keys(), message
+
+    def _check_cation_R_hyd(self, cation):
+        """
+        Raises AssertionError if value for hydrated radius does not exist for
+        specified cation.
+
+        """
+        message = "'" + cation + "' has no available value for hydrated " \
+                                 "radius."
+        assert cation in self.R_hyd_dict.keys(), message
+
+    ##########################
+    # Dissociation Constants #
+    ##########################
+
     def _change_K_list(self, cation):
         if cation is not None:
             if type(cation) is str:
@@ -158,16 +224,6 @@ class _Solution:
             else:
                 for i in range(len(cation)):
                     self.K_list[i] = self.K_dict[cation[i]]
-
-    def _check_cation_R_cr(self, cation):
-        message = "'" + cation + "' has no available value for " \
-                                 "crystallographic radius value."
-        assert cation in self.R_cr_dict.keys(), message
-
-    def _check_cation_R_hyd(self, cation):
-        message = "'" + cation + "' has no available value for hydrated " \
-                                 "radius."
-        assert cation in self.R_hyd_dict.keys(), message
 
     def _check_cation_K_ads(self, cation):
         message = "'" + cation + "' has no available value for adsorption " \
