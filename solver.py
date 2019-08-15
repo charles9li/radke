@@ -14,13 +14,13 @@ class _Solution:
               "Na": 2.5 * 10 ** 0.3,
               "K": 10 ** 2.8,
               "Cs": 10 ** 3}
-    R_cr_dict = {"Li": 60e-12,
-                 "Na": 98e-12,
-                 "K": 133e-12,
+    R_cr_dict = {"Li":  60e-12,
+                 "Na":  98e-12,
+                 "K":  133e-12,
                  "Cs": 169e-12}
     R_hyd_dict = {"Li": 3.82e-10,
                   "Na": 3.52e-10,
-                  "K": 3.31e-10,
+                  "K":  3.31e-10,
                   "Cs": 3.29e-10}
 
     def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
@@ -67,6 +67,16 @@ class _Solution:
                 R_cr = np.sum(R_cr_list*self.c_list[1:len(R_cr_list)+1]/np.sum(self.c_list[1:len(R_cr_list)+1]))
                 return eps_1/R_cr
 
+    def _compute_d1(self, cation):
+        if type(cation) is str:
+            return self.R_cr_dict[cation]
+
+    def _compute_R_cr_avg(self, cation):
+        if type(cation) is str:
+            return self.R_cr_dict[cation]
+        else:
+            return
+
     def _compute_C2(self, C2, cation, eps_r_2):
         if cation is None:
             return C2
@@ -97,6 +107,21 @@ class _Solution:
             else:
                 for i in range(len(cation)):
                     self.K_list[i] = self.K_dict[cation[i]]
+
+    def _check_cation_R_cr(self, cation):
+        message = "'" + cation + "' has no available value for " \
+                                 "crystallographic radius value."
+        assert cation in self.R_cr_dict.keys(), message
+
+    def _check_cation_R_hyd(self, cation):
+        message = "'" + cation + "' has no available value for hydrated " \
+                                 "radius."
+        assert cation in self.R_hyd_dict.keys(), message
+
+    def _check_cation_K_ads(self, cation):
+        message = "'" + cation + "' has no available value for adsorption " \
+                                 "equilibrium constant."
+        assert cation in self.K_dict.keys(), message
 
     def compute_kappa(self, rho_list):
         return np.sqrt(e ** 2 * np.sum(self.z_list**2*rho_list) / (self.eps_bulk * k * self.T))
