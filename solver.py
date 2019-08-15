@@ -6,26 +6,85 @@ from scipy.optimize import fsolve, root
 
 
 class _Solution:
+    """
+    Parent class for Solution1Plate and Solution2Plate classes.
 
-    SM_list = None
-    guess = None
+    Contains methods for continuation on the following parameters:
+        1. concentrations                           (c_list)
+        2. dissociation constants                   (K_list)
+        3. capacitance of inner Helmholtz region    (C1)
+        4. capacitance of outer Helmholtz region    (C2)
+        5. plate separation distance, for 2plate    (D)
 
+    Parameters
+    ----------
+    c_list : (N,) array_like
+             A 1-D array of concentrations. The anion concentration must be the
+             first element.
+    K_list : (N-1,) array_like
+             A 1-D array of dissociation constants for each cation.
+    z_list : (N,) array_like
+             A 1-D array of valences of each ion.
+    v_list : (N,) array_like
+             A 1-D array of booleans that indicated whether or not each ion
+             adsorbs the to surface.
+    D : float
+        Separation distance between two mica plates. Only used for the
+        Solution2Plate class.
+    C1 : float, optional
+         Capacitance of the inner Helmholtz region. If a cation(s) is
+         specified, then this value will be overridden.
+    C2 : float, optional
+         Capacitance of the outer Helmholtz region. If a cation(s) is
+         specified, then this value will be overridden.
+    pH_effect : bool, optional
+                If true, then H+ complexes in the 0-plane.
+    pH : float, optional
+         pH of the bulk solution. Only used when pH_effect is set to True.
+    pKa : float, optional
+          pKa of the mica surface. Only used when pH_effect is set to True.
+    T : float, optional
+        Temperature of the system in Kelvin.
+    L : float, optional
+        Number of surface sites on mica basal plane
+    eps_r_1 : float, optional
+              Relative permitivitty of inner Helmholtz region.
+    eps_r_2 : float, optional
+              Relative permitivitty of outer Helmholtz region.
+    eps_r_bulk : float, optional
+                 Relative permitivitty of bulk solution.
+    cation : str or (N,) array_like, optional
+             Specifies cations in the system. If this parameters is not None,
+             then dissociation constants and capacitances are computed.
+              
+    """
+
+    # Dictionary of dissociation constants
     K_dict = {"Li": 10 ** 0.3,
               "Na": 2.5 * 10 ** 0.3,
               "K": 10 ** 2.8,
               "Cs": 10 ** 3}
+
+    # Dictionary of crystallographic radii
     R_cr_dict = {"Li":  60e-12,
                  "Na":  98e-12,
                  "K":  133e-12,
                  "Cs": 169e-12}
+
+    # Dictionary of hydrated radii
     R_hyd_dict = {"Li": 3.82e-10,
                   "Na": 3.52e-10,
                   "K":  3.31e-10,
                   "Cs": 3.29e-10}
 
     def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
-                 pH=5.8, pKa=5.3, pH_effect=True, T=298, L=2e18, eps_r_1=6,
+                 pH_effect=True, pH=5.8, pKa=5.3, T=298, L=2e18, eps_r_1=6,
                  eps_r_2=30, eps_r_bulk=80, cation=None):
+        """
+        Initialize a _Solution instance.
+
+        """
+
         self.pH_effect = pH_effect
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
