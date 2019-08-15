@@ -52,47 +52,23 @@ class _Solution:
         if cation is None:
             return C1
         eps_1 = eps_r_1*epsilon_0
-        if self.pH_effect:
-            if type(cation) is str:
-                return eps_1/self.R_cr_dict[cation]
-            else:
-                R_cr_list = np.array([self.R_cr_dict[c] for c in cation])
-                R_cr = np.sum(R_cr_list*self.c_list[1:len(R_cr_list)+1]/np.sum(self.c_list[1:len(R_cr_list)+1]))
-                return eps_1/R_cr
-        else:
-            if type(cation) is str:
-                return eps_1/self.R_cr_dict[cation]
-            else:
-                R_cr_list = np.array([self.R_cr_dict[c] for c in cation])
-                R_cr = np.sum(R_cr_list*self.c_list[1:len(R_cr_list)+1]/np.sum(self.c_list[1:len(R_cr_list)+1]))
-                return eps_1/R_cr
+        d1 = self._compute_d1(cation)
+        return eps_1/d1
 
     def _compute_d1(self, cation):
-        if type(cation) is str:
-            return self.R_cr_dict[cation]
+        R_cr_avg = self._compute_R_cr_avg(cation)
+        return R_cr_avg
 
     def _compute_C2(self, C2, cation, eps_r_2):
         if cation is None:
             return C2
         eps_2 = eps_r_2*epsilon_0
-        if self.pH_effect:
-            if type(cation) is str:
-                d_2 = 2*self.R_hyd_dict[cation]
-                return eps_2/d_2
-            else:
-                R_hyd_list = np.array([self.R_cr_dict[c] for c in cation])
-                R_hyd = np.sum(R_hyd_list*self.c_list[1:len(R_hyd_list)+1]/np.sum(self.c_list[1:len(R_hyd_list)+1]))
-                d_2 = 2*R_hyd
-                return eps_2/d_2
-        else:
-            if type(cation) is str:
-                d_2 = 2*self.R_hyd_dict[cation]
-                return eps_2/d_2
-            else:
-                R_hyd_list = np.array([self.R_cr_dict[c] for c in cation])
-                R_hyd = np.sum(R_hyd_list*self.c_list[1:len(R_hyd_list)+1]/np.sum(self.c_list[1:len(R_hyd_list)+1]))
-                d_2 = 2*R_hyd
-                return eps_2/d_2
+        d2 = self._compute_d2(cation)
+        return eps_2/d2
+
+    def _compute_d2(self, cation):
+        R_hyd_avg = self._compute_R_hyd_avg(cation)
+        return 2*R_hyd_avg
 
     def _compute_R_cr_avg(self, cation):
         if type(cation) is str:
