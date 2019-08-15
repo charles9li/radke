@@ -42,6 +42,7 @@ class _Solution:
         self.cation = cation
         if pH_effect:
             self.c_list = np.append(self.c_list, 10 ** -pH)
+            self.c_list[0] += 10 ** -pH
             self.K_list = np.append(self.K_list, 10 ** pKa)
             self.z_list = np.append(self.z_list, 1)
             self.v_list = np.append(self.v_list, True)
@@ -118,6 +119,7 @@ class _Solution:
 
         # Initialize guess
         guess = self._create_guess(solution)
+        print("guess created")
 
         # Run continuation for each parameter
         guess = self._continuation('c_list', guess, 0.01, True)
@@ -264,7 +266,7 @@ class _Solution:
     def _create_c_list_init(self, solution):
         if solution is None:
             if self.pH_effect:
-                self._c_list_init = np.array([1e-3] * (len(self.c_list[self.v_list])-1))
+                self._c_list_init = np.array([0.1] * (len(self.c_list[self.v_list])-1))
                 self._c_list_init = np.append(self._c_list_init, 10**-5.8)
             else:
                 self._c_list_init = np.array([1e-3] * len(self.c_list[self.v_list]))
