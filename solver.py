@@ -96,6 +96,7 @@ class _Solution:
         self.pH_effect = pH_effect
         self.c_list = np.array(c_list)
         self.K_list = np.array(K_list)
+        self._change_K_list(cation)
         self.z_list = np.array(z_list)
         self.v_list = np.array(v_list)
         self.D = D
@@ -113,7 +114,6 @@ class _Solution:
             self.K_list = np.append(self.K_list, 10 ** pKa)
             self.z_list = np.append(self.z_list, 1)
             self.v_list = np.append(self.v_list, True)
-        self._change_K_list(cation)
 
     ###############
     # Capacitance #
