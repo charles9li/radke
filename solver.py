@@ -82,9 +82,9 @@ class _Solution:
                   "K":  3.31e-10,
                   "Cs": 3.29e-10}
 
-    ###############
-    # Constructor #
-    ###############
+    #########################
+    # Initializing Instance #
+    #########################
 
     def __init__(self, c_list, K_list, z_list, v_list, D, C1=0.5, C2=0.5,
                  pH_effect=True, pH=5.8, pKa=5.3, T=298, L=2e18, eps_r_1=6,
@@ -117,10 +117,6 @@ class _Solution:
             self.K_list = np.append(self.K_list, 10 ** pKa)
             self.z_list = np.append(self.z_list, 1)
             self.v_list = np.append(self.v_list, True)
-
-    ###############
-    # Capacitance #
-    ###############
 
     def _compute_C1(self, C1, cation, eps_r_1):
         """
